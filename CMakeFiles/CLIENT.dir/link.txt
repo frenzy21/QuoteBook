@@ -1,0 +1,1 @@
+/usr/bin/c++ -lrt CMakeFiles/CLIENT.dir/client.cpp.o CMakeFiles/CLIENT.dir/src/QuoteBook.cpp.o -o CLIENT  -lrt -lpthread
