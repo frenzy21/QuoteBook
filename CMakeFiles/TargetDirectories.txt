@@ -1,4 +1,0 @@
-/home/balmoral/BOOK2/CMakeFiles/SERVER.dir
-/home/balmoral/BOOK2/CMakeFiles/CLIENT.dir
-/home/balmoral/BOOK2/CMakeFiles/edit_cache.dir
-/home/balmoral/BOOK2/CMakeFiles/rebuild_cache.dir

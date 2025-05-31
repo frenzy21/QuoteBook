@@ -1,1 +1,0 @@
-/usr/bin/c++ -lrt CMakeFiles/BOOK2.dir/server.cpp.o CMakeFiles/BOOK2.dir/QuoteBook.cpp.o -o BOOK2  -lrt -lpthread

@@ -1,1 +1,0 @@
-/usr/bin/c++ -lrt CMakeFiles/SERVER.dir/server.cpp.o CMakeFiles/SERVER.dir/src/QuoteBook.cpp.o -o SERVER  -lrt -lpthread
