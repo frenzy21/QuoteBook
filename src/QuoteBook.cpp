@@ -6,8 +6,7 @@
 
 
 
-template<> void QuoteBook<float,float>::print() {
-    spdlog::info("Welcome to Print! with float");
 
-}
+
+
 
