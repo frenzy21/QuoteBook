@@ -11,14 +11,28 @@ int main(int argc, char* argv[]) {
     }
 
 
-
+    spdlog::info(" Hello Creating Object");
     QuoteBook<int,int> myquotebook_CLIENT("JPY",false);
+    spdlog::info(" Hello printing book");
+    myquotebook_CLIENT.printbook();
+    //myquotebook_CLIENT.BooKAdd("C",0,900);
 
-    try {
-        spdlog::info("Returning value for key {}= {}", mykey, myquotebook_CLIENT.MyMapGet(mykey));
-    }catch (const std::exception& e) {
-        spdlog::info("Exception caught: {}", e.what());
+
+    /*auto start = std::chrono::high_resolution_clock::now();
+
+    // Perform operation
+    for (int i = 0; i < 2000000; ++i)
+    {
+       //int y= myquotebook_CLIENT.MyMapGet(i%1000);
+        // spdlog::info( "{} {} {}", i%1000,i,myquotebook_SERVER.MyMapGet(i%1000));
     }
+    // End time
+    auto stop = std::chrono::high_resolution_clock::now();
 
+    // Calculate duration
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+    spdlog::info( "Time taken: {}", duration.count());
     return 0;
+     */
 }

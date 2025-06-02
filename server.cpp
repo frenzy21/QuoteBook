@@ -15,32 +15,18 @@ int main() {
     spdlog::critical("Support for int: {0:d}; hex: {0:x}; oct: {0:o}; bin: {0:b}", 42);
     spdlog::info("Support for floats {:03.2f}", 1.23456);
     spdlog::info("Positional args are {1} {0}..", "too", "supported");
-    QuoteBook<int,int> myquotebook_SERVER("JPY",true);
-    myquotebook_SERVER.print();
+
+    QuoteBook<int,int> myquotebook_SERVER("JPY",true,{"AA","B","C","A","D"});
+
     QuoteBook<int,int> myquotebook_CLIENT("JPY",false);
-    myquotebook_CLIENT.print();
 
-    myquotebook_SERVER.MyMapSet(1,-10);
+    //myquotebook_SERVER.printbook();
+    myquotebook_SERVER.BooKAdd("C",2,30);
+    myquotebook_CLIENT.BooKAdd("B",4,1900);
+    myquotebook_CLIENT.printbook();
+    //myquotebook_SERVER.printbook();
 
-    spdlog::info("Returning value for key 1= {}",myquotebook_CLIENT.MyMapGet(1));
+    //spdlog::info("Position of src {} is {}..", "A", myquotebook_CLIENT.getsrcindex("A"));
 
-
-        auto start = std::chrono::high_resolution_clock::now();
-
-        // Perform operation
-    for (int i = 0; i < 200000; ++i)
-    {
-        myquotebook_SERVER.MyMapSet(i%1000,i);
-       // spdlog::info( "{} {} {}", i%1000,i,myquotebook_SERVER.MyMapGet(i%1000));
-    }
-        // End time
-        auto stop = std::chrono::high_resolution_clock::now();
-
-        // Calculate duration
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-
-        spdlog::info( "Time taken: {}", duration.count());
-
-    spdlog::info("Returning value for key 100= {}",myquotebook_SERVER.MyMapGet(100));
     return 0;
 }
