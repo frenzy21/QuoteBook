@@ -39,9 +39,11 @@ typedef int KeyType;
 
 struct SharedMemoryMap
 {
-    typedef std::pair<const int, int> ValueType;
+    typedef boost::interprocess::allocator<char, boost::interprocess::managed_shared_memory::segment_manager> CharAllocator;
+    typedef boost::interprocess::basic_string<char, std::char_traits<char>, CharAllocator> SharedString;
+    typedef std::pair<const int, SharedString> ValueType;
     typedef boost::interprocess::allocator<ValueType, boost::interprocess::managed_shared_memory::segment_manager> Allocator;
-    typedef boost::unordered_map<int, int, std::hash<int>, std::equal_to<int>, Allocator> MapType;
+    typedef boost::unordered_map<int, SharedString, std::hash<int>, std::equal_to<int>, Allocator> MapType;
 };
 
 
@@ -148,9 +150,9 @@ public:
             QuoteBook_CLIENT();
         };
         spdlog::info("QuoteBook session pid is {}",getpid());
-        //addtoStateMap(message);
+        addtoStateMap(message);
         // spdlog::info("MyState list   {}",myState->attachList.size());
-       myState->myPidMap->insert_or_assign((int)getpid(),1);
+       //myState->myPidMap->insert_or_assign((int)getpid(),SharedMemoryMap::SharedString(message, stringAllocator));
        print();
     }
 
@@ -283,13 +285,11 @@ public:
         spdlog::info("myState has the location {}", (long)myState);
 
         spdlog::info(" Srcs element = {}", vectorToString(Srcs));
-        spdlog::info(" myState contents size {}", myState->myPidMap->size());
-
-        spdlog::info(" myState contents size {}", myState->myPidMap->size());
+        spdlog::info(" myState pidMap contents size {}", myState->myPidMap->size());
 
 
 
-        spdlog::info(" myState pidMap contents {}", mapToString( *myState->myPidMap));
+       spdlog::info(" myState pidMap contents {}", mapToString( *myState->myPidMap));
 
         printbook();
 
@@ -337,15 +337,16 @@ public:
 
     }
 
-    void addtoStateMap(std::string message)
-    {
-        CharAllocator charAlloc(shmState.get_segment_manager());
+    void addtoStateMap(std::string message) {
 
-        SharedString val(message, charAlloc);
-        //SharedString key2("key2", charAlloc);
+        SharedMemoryMap::Allocator allocator(shmState.get_segment_manager());
+        SharedMemoryMap::CharAllocator stringAllocator(shmState.get_segment_manager());
 
-        //myState->myMap->insert   (std::make_pair(getpid(),val));
+
+        myState->myPidMap->insert(std::make_pair(getpid(), SharedMemoryMap::SharedString(message, stringAllocator)));
         //myState->myMap->insert(std::make_pair(200,key2));
+
+
 
     }
 
