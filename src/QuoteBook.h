@@ -7,12 +7,18 @@
 #include "spdlog/spdlog.h"
 #include <map>
 #include <array>
+#include <random>
+
 
 
 #include <typeinfo>
 #include <stdexcept>
 #include <sstream>
 #include <string>
+#include <unistd.h>
+#include <iostream>
+#include <utility> // for std::pair
+
 
 
 
@@ -21,6 +27,7 @@
 #include <boost/interprocess/containers/vector.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/containers/string.hpp>
+#include <boost/unordered_map.hpp>
 
 #include <iostream>
 
@@ -30,6 +37,12 @@ typedef int KeyType;
 
 // What i want is an Array in memory. ( or actually an Array of arrays. )
 
+struct SharedMemoryMap
+{
+    typedef std::pair<const int, int> ValueType;
+    typedef boost::interprocess::allocator<ValueType, boost::interprocess::managed_shared_memory::segment_manager> Allocator;
+    typedef boost::unordered_map<int, int, std::hash<int>, std::equal_to<int>, Allocator> MapType;
+};
 
 
 
@@ -39,20 +52,11 @@ public:
     std::string Name = "TEST";
     std::string BookName = "";
     std::string SrcName = "";
+    std::string StateName = "";
+
     std::string SessionType = "None";
     int NumLevels = 5;
     std::vector<std::string> Srcs = std::vector<std::string>();
-    struct Book {
-        int rows, cols;
-    };
-    //struct myBook {
-    //   int rows, cols;
-    //  int* data;  // Pointer to dynamically allocated matrix
-    //};
-
-
-
-
 
 
 
@@ -72,9 +76,38 @@ public:
     typedef allocator<int, managed_shared_memory::segment_manager>ShmemAllocator;
     typedef std::vector<int, ShmemAllocator> MyVector;
 
+////////////////////////////////////////////////////////////
+
+    typedef managed_shared_memory::segment_manager StateSegmentManager;
+    typedef allocator<void, StateSegmentManager> VoidAllocator;
+
+// Define key and value types
+    typedef allocator<char, StateSegmentManager> CharAllocator;
+    typedef basic_string<char, std::char_traits<char>, CharAllocator> SharedString;
+
+    typedef std::pair<const int, SharedString> MapValueType;
+    typedef allocator<MapValueType, StateSegmentManager> MapAllocator;
+    typedef boost::interprocess::map<int,SharedString, std::less<int>, MapAllocator> SharedMap;
+
+// Define struct with a map inside
+    struct SharedState {
+        int rows;
+        int cols;
+        SharedMemoryMap::MapType *myPidMap;
+        // Constructor
+
+    };
 
 
+    struct QuoteState {
+        int rows=0;
+        int cols=0;
 
+
+    };
+
+
+/////////////////////////////////////////////////////////////
 
 
     //managed_shared_memory *shm;
@@ -84,19 +117,22 @@ public:
     ShmemVector *mySrcMap;
     managed_shared_memory shmSrc;
 
-    Book *myBook;
-    managed_shared_memory shmBook;
+    SharedState *myState;
+    managed_shared_memory shmState;
+    SharedMemoryMap::MapType *thatmap;
 
     MyVector* myVector;
     managed_shared_memory shmVec;
 
 
-    QuoteBook(std::string s, bool b, std::vector<std::string> srcs = std::vector<std::string>()) {
+
+    QuoteBook(std::string s, bool b, std::vector<std::string> srcs = std::vector<std::string>(),std::string message="No Message") {
         spdlog::info("Welcome to QuoteBook! with {}", typeid(K).name());
         spdlog::info("Welcome to QuoteBook called with argments {} {}", s, b);
         Name = s;
         SrcName = Name + "_Srcs";
         BookName = Name + "_Book";
+        StateName = Name + "_State";
         if (b) {
             spdlog::info("QuoteBook Session started as server");
             if (srcs.empty()) {
@@ -111,8 +147,11 @@ public:
             spdlog::info("QuoteBook session started as a client");
             QuoteBook_CLIENT();
         };
-
-
+        spdlog::info("QuoteBook session pid is {}",getpid());
+        //addtoStateMap(message);
+        // spdlog::info("MyState list   {}",myState->attachList.size());
+       myState->myPidMap->insert_or_assign((int)getpid(),1);
+       print();
     }
 
     void QuoteBook_CLIENT() {
@@ -129,15 +168,28 @@ public:
 
         spdlog::info("Client myBook being attached. {}", BookName);
 
-        shmVec=managed_shared_memory(open_only, "VectorMemory");
+        shmVec=managed_shared_memory(open_only, BookName.c_str());
 
         spdlog::info("Client myBook being attached. {}", BookName);
         // Find the matrix
         //
         myVector= shmVec.find<MyVector>("MyVector").first;
 
-        print();
+
+        shmState = managed_shared_memory(open_only, StateName.c_str());
+        myState = shmState.find<SharedState>("myState").first;
+
+        thatmap = shmState.find<SharedMemoryMap::MapType>("thatMap").first;
+        myState->myPidMap=thatmap;
+        if (!myState ) {
+            std::cerr << "Could not find struct or map in shared memory.\n";
+
+        }
+
+
         spdlog::info("Finished Client Setup for Shared Memory.");
+
+
 
     }
 
@@ -161,27 +213,53 @@ public:
         }
 
 
-
         // Define matrix size at runtime
 
         spdlog::info("Creating Book Segment {}.", BookName);
 
 
-        shared_memory_object::remove("VectorMemory");
+        shared_memory_object::remove(BookName.c_str());
         spdlog::info("Allocated memory {}",NumLevels * Srcs.size() * sizeof(V));
-        shmVec=managed_shared_memory(create_only, "VectorMemory" ,1010000);
+        shmVec=managed_shared_memory(create_only, BookName.c_str() ,1010000);
         spdlog::info("Allocated memory");
         const ShmemAllocator alloc_inst(shmVec.get_segment_manager());
         myVector =shmVec.construct<MyVector>("MyVector")(alloc_inst); //first ctor parameter
 
+
+        spdlog::info("Client myBook being attached and filled. {}", BookName);
+
+        //myState=shmState.construct<State>("myState")();
         for(int i=0;i<NumLevels * Srcs.size();i++)
         {
-            spdlog::info("Adding");
             myVector->push_back(-1*i*0);
-            //spdlog::info("Added {}",(*myVector)[i]);
 
         }
-        print();
+
+        spdlog::info("Creating the State memory.", StateName);
+
+        //////////////////////////////////////////////////////////
+
+        shared_memory_object::remove(StateName.c_str());
+
+        shmState = managed_shared_memory(create_only, StateName.c_str(), 65536);
+        //VoidAllocator voidAlloc(shmState.get_segment_manager());
+        //MapAllocator mapAlloc(shmState.get_segment_manager());
+        myState = shmState.construct<SharedState>("myState")();
+
+        myState->cols=Srcs.size();
+        myState->rows=NumLevels;
+
+        SharedMemoryMap::Allocator allocator(shmState.get_segment_manager());
+        //SharedMemoryMap::MapType *
+        thatmap = shmState.find_or_construct<SharedMemoryMap::MapType>("thatMap")(allocator);
+        myState->myPidMap=thatmap;
+
+        for (const auto &pair : *thatmap)
+        {
+            std::cout << pair.first << " -> " << pair.second << std::endl;
+        }
+        /////////////////////////////////////////////////////////
+
         spdlog::info("Finished Server Setup for Shared Memory.");
 
     }
@@ -202,18 +280,16 @@ public:
         //spdlog::info("This session has {} levels.", myBook->rows);
         //spdlog::info("This session has {} Levels  and {} Srcs.", myBook->rows, Srcs.size());
 
-        spdlog::info("myBook has the location {}", (long)myBook);
+        spdlog::info("myState has the location {}", (long)myState);
 
-
-
-        std::vector<std::string>::iterator it;
-        for (it = Srcs.begin(); it != Srcs.end(); ++it) {
-
-            std::string s = (std::string) *it;
-           //spdlog::info(" Srcs element = {}", s);
-           //spdlog::info(" Srcs element = {}", s);
-        }
         spdlog::info(" Srcs element = {}", vectorToString(Srcs));
+        spdlog::info(" myState contents size {}", myState->myPidMap->size());
+
+        spdlog::info(" myState contents size {}", myState->myPidMap->size());
+
+
+
+        spdlog::info(" myState pidMap contents {}", mapToString( *myState->myPidMap));
 
         printbook();
 
@@ -223,6 +299,8 @@ public:
         spdlog::info(" Print Book {}",myVector->size());
         int cnt=0;
         spdlog::info(" Srcs element = {}", vectorToString(Srcs));
+
+
         for (int i = 0; i < NumLevels; ++i) {
             for (int j = 0; j < Srcs.size(); ++j) {
                 //spdlog::info(" Elelement ({},{})  is {}", i, j, (*myVector)[cnt]);
@@ -259,6 +337,18 @@ public:
 
     }
 
+    void addtoStateMap(std::string message)
+    {
+        CharAllocator charAlloc(shmState.get_segment_manager());
+
+        SharedString val(message, charAlloc);
+        //SharedString key2("key2", charAlloc);
+
+        //myState->myMap->insert   (std::make_pair(getpid(),val));
+        //myState->myMap->insert(std::make_pair(200,key2));
+
+    }
+
 
     // Helper function to convert a vector to a string
     template <typename T>
@@ -274,6 +364,24 @@ public:
         oss << "]";
         return oss.str();
     }
+
+    template<typename mapType>
+    std::string mapToString(const mapType& m) {
+        std::ostringstream oss;
+        oss << "{";
+        for (auto it = m.begin(); it != m.end(); ++it) {
+            oss << it->first << ": " << it->second;
+            if (std::next(it) != m.end()) {
+                oss << ", ";
+            }
+        }
+        oss << "}";
+        return oss.str();
+    }
+
+
+
+
 
 
 
