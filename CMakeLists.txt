@@ -19,11 +19,11 @@ target_link_libraries(CLIENT PRIVATE rt pthread)
 
 #target_link_options(SERVER PRIVATE -O3)
 #target_compile_options(SERVER PRIVATE -O3)
-target_compile_options(SERVER PRIVATE -g2)
+target_compile_options(SERVER PRIVATE -g)
 
 #target_link_options(CLIENT PRIVATE -O3)
 #target_compile_options(CLIENT PRIVATE -O3)
-target_compile_options(SERVER PRIVATE -g2)
+target_compile_options(SERVER PRIVATE -g)
 
 
 

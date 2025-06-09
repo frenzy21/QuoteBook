@@ -16,17 +16,18 @@ int main() {
     spdlog::info("Support for floats {:03.2f}", 1.23456);
     spdlog::info("Positional args are {1} {0}..", "too", "supported");
 
-    QuoteBook<int,int> myquotebook_SERVER("JPY",true,{"AA","B","C","A","D"});
+    QuoteBook<int,int> myquotebook_SERVER("JPY",true,"Server",{"AA","B","C","A","D","kk"},20);
 
-    QuoteBook<int,int> myquotebook_CLIENT("JPY",false);
+    QuoteBook<int,int> myquotebook_CLIENT("JPY",false,"client");
 
     //myquotebook_SERVER.printbook();
-    myquotebook_SERVER.BooKAdd("C",2,30);
+    myquotebook_SERVER.BooKAdd("AA",2,30);
     myquotebook_CLIENT.BooKAdd("B",4,1900);
     myquotebook_CLIENT.printbook();
     //myquotebook_SERVER.printbook();
 
+    myquotebook_SERVER.runPrintBook();
     //spdlog::info("Position of src {} is {}..", "A", myquotebook_CLIENT.getsrcindex("A"));
-
+    myquotebook_SERVER.bookPrintThread.join();
     return 0;
 }

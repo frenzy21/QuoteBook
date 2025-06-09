@@ -8,6 +8,9 @@
 #include <map>
 #include <array>
 #include <random>
+#include <thread>
+
+
 
 
 
@@ -57,8 +60,13 @@ public:
     std::string StateName = "";
 
     std::string SessionType = "None";
-    int NumLevels = 5;
+
+    int NumLevels=0;
+    int  myNumLevels=5;
     std::vector<std::string> Srcs = std::vector<std::string>();
+    std::thread bookPrintThread;
+
+
 
 
 
@@ -128,13 +136,14 @@ public:
 
 
 
-    QuoteBook(std::string s, bool b, std::vector<std::string> srcs = std::vector<std::string>(),std::string message="No Message") {
+    QuoteBook(std::string s, bool b, std::string message="No Message",std::vector<std::string> srcs = std::vector<std::string>(),int levels=5 ) {
         spdlog::info("Welcome to QuoteBook! with {}", typeid(K).name());
         spdlog::info("Welcome to QuoteBook called with argments {} {}", s, b);
         Name = s;
         SrcName = Name + "_Srcs";
         BookName = Name + "_Book";
         StateName = Name + "_State";
+        NumLevels=levels;
         if (b) {
             spdlog::info("QuoteBook Session started as server");
             if (srcs.empty()) {
@@ -180,7 +189,7 @@ public:
 
         shmState = managed_shared_memory(open_only, StateName.c_str());
         myState = shmState.find<SharedState>("myState").first;
-
+        NumLevels=myState->rows;
         thatmap = shmState.find<SharedMemoryMap::MapType>("thatMap").first;
         myState->myPidMap=thatmap;
         if (!myState ) {
@@ -221,12 +230,12 @@ public:
 
 
         shared_memory_object::remove(BookName.c_str());
-        spdlog::info("Allocated memory {}",NumLevels * Srcs.size() * sizeof(V));
-        shmVec=managed_shared_memory(create_only, BookName.c_str() ,1010000);
+        spdlog::info("Allocated memory {}",10000+NumLevels * Srcs.size() * sizeof(V));
+
+        shmVec=managed_shared_memory(create_only, BookName.c_str() ,10000+NumLevels * Srcs.size() * sizeof(V));
         spdlog::info("Allocated memory");
         const ShmemAllocator alloc_inst(shmVec.get_segment_manager());
         myVector =shmVec.construct<MyVector>("MyVector")(alloc_inst); //first ctor parameter
-
 
         spdlog::info("Client myBook being attached and filled. {}", BookName);
 
@@ -301,8 +310,8 @@ public:
         spdlog::info(" Srcs element = {}", vectorToString(Srcs));
 
 
-        for (int i = 0; i < NumLevels; ++i) {
-            for (int j = 0; j < Srcs.size(); ++j) {
+        for (int i = 0; i < Srcs.size(); ++i) {
+            for (int j = 0; j < NumLevels; ++j) {
                 //spdlog::info(" Elelement ({},{})  is {}", i, j, (*myVector)[cnt]);
 
                 std::cout << (*myVector)[cnt]<<", ";
@@ -316,12 +325,24 @@ public:
         //}
     }
 
+    void runPrintBook() {
+        for (int i = 0; i < 1000; i++) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        printbook();
+    }
+    }
+    void BookPrint(){
+        spdlog::info(" Starting to print book. ");
+        bookPrintThread(&QuoteBook::runPrintBook, this);
+
+    }
+
     int getsrcindex(std::string Src){
         auto it = std::find(Srcs.begin(), Srcs.end(), Src);
         int index=-1;
         if (it != Srcs.end()) {
             index = std::distance(Srcs.begin(), it);
-            std::cout << "Index of " << Src << " is: " << index << std::endl;
+          //  std::cout << "Index of " << Src << " is: " << index << std::endl;
         } else {
             std::cout << "Element not found!" << std::endl;
         }
@@ -331,10 +352,12 @@ public:
     }
 
     void BooKAdd(std::string Src,float price,K size){
+        spdlog::info( " hello {} ", Src);
         int index= getsrcindex(Src);
 
+        spdlog::info( " hello {} {} {} {}",Src,index,price,(NumLevels*index)+(int)price);
         myVector->at((NumLevels*index)+(int)price)=size;
-
+        spdlog::info( " hello  finished index ");
     }
 
     void addtoStateMap(std::string message) {
