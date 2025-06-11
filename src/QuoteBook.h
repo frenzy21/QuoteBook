@@ -109,30 +109,17 @@ public:
     };
 
 
-    struct QuoteState {
-        int rows=0;
-        int cols=0;
 
 
-    };
 
 
 /////////////////////////////////////////////////////////////
 
-
-    //managed_shared_memory *shm;
-    ShmMap *myMap;
-    managed_shared_memory shm;
-
-    ShmemVector *mySrcMap;
     managed_shared_memory shmSrc;
-
+    ShmMap *myMap;
+    ShmemVector *mySrcMap;
     SharedState *myState;
-    managed_shared_memory shmState;
-    SharedMemoryMap::MapType *thatmap;
-
     MyVector* myVector;
-    managed_shared_memory shmVec;
 
 
 
@@ -179,19 +166,15 @@ public:
 
         spdlog::info("Client myBook being attached. {}", BookName);
 
-        shmVec=managed_shared_memory(open_only, BookName.c_str());
 
         spdlog::info("Client myBook being attached. {}", BookName);
-        // Find the matrix
-        //
-        myVector= shmVec.find<MyVector>("MyVector").first;
+         myVector= shmSrc.find<MyVector>("MyVector").first;
 
-
-        shmState = managed_shared_memory(open_only, StateName.c_str());
-        myState = shmState.find<SharedState>("myState").first;
+         myState = shmSrc.find<SharedState>("myState").first;
         NumLevels=myState->rows;
-        thatmap = shmState.find<SharedMemoryMap::MapType>("thatMap").first;
-        myState->myPidMap=thatmap;
+
+        myState->myPidMap=shmSrc.find<SharedMemoryMap::MapType>("thatMap").first;
+
         if (!myState ) {
             std::cerr << "Could not find struct or map in shared memory.\n";
 
@@ -209,10 +192,10 @@ public:
         spdlog::info("Cleaning Shared memory");
         shared_memory_object::remove(Name.c_str());
         spdlog::info("Cleaned up shared memory");
-
+        int totsize=65536+10000+NumLevels * Srcs.size() * sizeof(V);
         shared_memory_object::remove(SrcName.c_str());
 
-        shmSrc = managed_shared_memory(create_only, SrcName.c_str(), 65536);
+        shmSrc = managed_shared_memory(create_only, SrcName.c_str(), totsize);
 
         mySrcMap = shmSrc.construct<ShmemVector>("mySrcMap")(shmSrc.get_segment_manager());
 
@@ -223,23 +206,14 @@ public:
             mySrcMap->emplace_back(s, shmSrc.get_segment_manager());
         }
 
-
-        // Define matrix size at runtime
-
         spdlog::info("Creating Book Segment {}.", BookName);
 
 
-        shared_memory_object::remove(BookName.c_str());
-        spdlog::info("Allocated memory {}",10000+NumLevels * Srcs.size() * sizeof(V));
-
-        shmVec=managed_shared_memory(create_only, BookName.c_str() ,10000+NumLevels * Srcs.size() * sizeof(V));
-        spdlog::info("Allocated memory");
-        const ShmemAllocator alloc_inst(shmVec.get_segment_manager());
-        myVector =shmVec.construct<MyVector>("MyVector")(alloc_inst); //first ctor parameter
+          const ShmemAllocator alloc_inst(shmSrc.get_segment_manager());
+        myVector =shmSrc.construct<MyVector>("MyVector")(alloc_inst); //first ctor parameter
 
         spdlog::info("Client myBook being attached and filled. {}", BookName);
 
-        //myState=shmState.construct<State>("myState")();
         for(int i=0;i<NumLevels * Srcs.size();i++)
         {
             myVector->push_back(-1*i*0);
@@ -250,22 +224,18 @@ public:
 
         //////////////////////////////////////////////////////////
 
-        shared_memory_object::remove(StateName.c_str());
-
-        shmState = managed_shared_memory(create_only, StateName.c_str(), 65536);
-        //VoidAllocator voidAlloc(shmState.get_segment_manager());
-        //MapAllocator mapAlloc(shmState.get_segment_manager());
-        myState = shmState.construct<SharedState>("myState")();
+        myState = shmSrc.construct<SharedState>("myState")();
 
         myState->cols=Srcs.size();
         myState->rows=NumLevels;
 
-        SharedMemoryMap::Allocator allocator(shmState.get_segment_manager());
-        //SharedMemoryMap::MapType *
-        thatmap = shmState.find_or_construct<SharedMemoryMap::MapType>("thatMap")(allocator);
-        myState->myPidMap=thatmap;
+        SharedMemoryMap::Allocator allocator(shmSrc.get_segment_manager());
+        //SharedMemoryMap::MapType *thatmap;
+        //thatmap
+        myState->myPidMap= shmSrc.find_or_construct<SharedMemoryMap::MapType>("thatMap")(allocator);
+        //myState->myPidMap=thatmap;
 
-        for (const auto &pair : *thatmap)
+        for (const auto &pair : *myState->myPidMap)
         {
             std::cout << pair.first << " -> " << pair.second << std::endl;
         }
@@ -288,8 +258,6 @@ public:
 
         spdlog::info("SrcsMap pointer", (long)mySrcMap);
 
-        //spdlog::info("This session has {} levels.", myBook->rows);
-        //spdlog::info("This session has {} Levels  and {} Srcs.", myBook->rows, Srcs.size());
 
         spdlog::info("myState has the location {}", (long)myState);
 
@@ -352,18 +320,16 @@ public:
     }
 
     void BooKAdd(std::string Src,float price,K size){
-        spdlog::info( " hello {} ", Src);
+        //spdlog::info( " hello {} ", Src);
         int index= getsrcindex(Src);
 
-        spdlog::info( " hello {} {} {} {}",Src,index,price,(NumLevels*index)+(int)price);
         myVector->at((NumLevels*index)+(int)price)=size;
-        spdlog::info( " hello  finished index ");
-    }
+     }
 
     void addtoStateMap(std::string message) {
 
-        SharedMemoryMap::Allocator allocator(shmState.get_segment_manager());
-        SharedMemoryMap::CharAllocator stringAllocator(shmState.get_segment_manager());
+        SharedMemoryMap::Allocator allocator(shmSrc.get_segment_manager());
+        SharedMemoryMap::CharAllocator stringAllocator(shmSrc.get_segment_manager());
 
 
         myState->myPidMap->insert(std::make_pair(getpid(), SharedMemoryMap::SharedString(message, stringAllocator)));

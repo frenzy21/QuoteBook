@@ -43,12 +43,12 @@ int random_number = dist(gen);
     // Perform operation
     for (int i = 0; i < 200000000; ++i)
     {
-        spdlog::info(" start of loop ");
+       // spdlog::info(" start of loop ");
         std::string s=Srcs[distsrcs(gen)];
-        spdlog::info(" after gen ");
+       // spdlog::info(" after gen ");
         int p=dist(gen);
         int sz=(int)10*dist(gen);
-        spdlog::info(" {} {} {}0",s,p,sz);
+       // spdlog::info(" {} {} {}0",s,p,sz);
         myQuoteBook->BooKAdd(s,p,sz);
 
     }

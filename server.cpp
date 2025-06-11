@@ -18,12 +18,12 @@ int main() {
 
     QuoteBook<int,int> myquotebook_SERVER("JPY",true,"Server",{"AA","B","C","A","D","kk"},20);
 
-    QuoteBook<int,int> myquotebook_CLIENT("JPY",false,"client");
+    //QuoteBook<int,int> myquotebook_CLIENT("JPY",false,"client");
 
     //myquotebook_SERVER.printbook();
     myquotebook_SERVER.BooKAdd("AA",2,30);
-    myquotebook_CLIENT.BooKAdd("B",4,1900);
-    myquotebook_CLIENT.printbook();
+    myquotebook_SERVER.BooKAdd("B",4,1900);
+    //myquotebook_CLIENT.printbook();
     //myquotebook_SERVER.printbook();
 
     myquotebook_SERVER.runPrintBook();
