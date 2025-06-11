@@ -147,9 +147,7 @@ public:
         };
         spdlog::info("QuoteBook session pid is {}",getpid());
         addtoStateMap(message);
-        // spdlog::info("MyState list   {}",myState->attachList.size());
-       //myState->myPidMap->insert_or_assign((int)getpid(),SharedMemoryMap::SharedString(message, stringAllocator));
-       print();
+        print();
     }
 
     void QuoteBook_CLIENT() {
