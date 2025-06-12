@@ -1,23 +1,15 @@
-//
-// Created by balmoral on 26/05/25.
-//
-
 #ifndef BOOK2_QUOTEBOOK_H
 #define BOOK2_QUOTEBOOK_H
 
 #include "spdlog/spdlog.h"
-#include <array>
-#include <map>
-#include <random>
-#include <thread>
+//#include <map>
+//#include <thread>
 
 #include <iostream>
-#include <sstream>
 #include <stdexcept>
-#include <string>
-#include <typeinfo>
-#include <unistd.h>
-#include <utility> // for std::pair
+
+
+
 
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/containers/map.hpp>
@@ -27,13 +19,10 @@
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/unordered_map.hpp>
 
-#include <iostream>
 
 using namespace boost::interprocess;
 
-typedef int KeyType;
 
-// What i want is an Array in memory. ( or actually an Array of arrays. )
 
 
 struct SharedMemoryMap {

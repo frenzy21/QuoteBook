@@ -1,6 +1,7 @@
 #include "spdlog/spdlog.h"
 #include "src/QuoteBook.h"
 #include <iostream>
+#include <random>
 
 std::random_device rd;
 std::mt19937 gen(rd()); // Mersenne Twister PRNG
