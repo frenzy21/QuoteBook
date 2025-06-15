@@ -23,7 +23,16 @@
 using namespace boost::interprocess;
 
 
+struct MyMutexContainer {
+    int* mynum;
+    interprocess_mutex* mutex;
+    // Constructor
+};
 
+struct SharedData {
+    interprocess_mutex* mutex;
+    int value;
+};
 
 struct SharedMemoryMap {
   typedef boost::interprocess::allocator<char, boost::interprocess::managed_shared_memory::segment_manager>CharAllocator;
@@ -33,6 +42,10 @@ struct SharedMemoryMap {
   typedef boost::unordered_map<int, SharedString, std::hash<int>,std::equal_to<int>, Allocator>MapType;
   typedef vector<SharedString, allocator<SharedString, managed_shared_memory::segment_manager>> ShmemVector;
   typedef std::vector<int, allocator<int, managed_shared_memory::segment_manager>> MyVector;
+
+    typedef allocator<MyMutexContainer, managed_shared_memory::segment_manager> MeAllocator;
+    typedef std::vector<MyMutexContainer,MeAllocator> Me;
+
 };
 
 
@@ -49,6 +62,7 @@ public:
   int NumLevels = 0;
   int myNumLevels = 5;
   std::vector<std::string> Srcs = std::vector<std::string>();
+  std::vector<MyMutexContainer> myMutexes;
   std::thread bookPrintThread;
 
   ////////////////////////////////////////////////////////////
@@ -57,19 +71,32 @@ public:
     int rows;
     int cols;
     SharedMemoryMap::MapType *myPidMap;
-    // Constructor
+
   };
 
-  /////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+    /////////////////////////////////////////////////////////////
 
   managed_shared_memory shmSrc;
   SharedMemoryMap::ShmemVector *mySrcMap;
   SharedState *myState;
   SharedMemoryMap::MyVector *myVector;
+  managed_shared_memory shm;
+
 
   QuoteBook(std::string s, bool b, std::string message = "No Message",
             std::vector<std::string> srcs = std::vector<std::string>(),
-            int levels = 5) {
+            int levels = 5,bool clean=false) {
     spdlog::info("Welcome to QuoteBook! with {}", typeid(K).name());
     spdlog::info("Welcome to QuoteBook called with argments {} {}", s, b);
     Name = s;
@@ -77,6 +104,18 @@ public:
     BookName = Name + "_Book";
     StateName = Name + "_State";
     NumLevels = levels;
+      if(clean) {
+          spdlog::info("Clearing SharedMemory Region.");
+          shared_memory_object::remove("SharedMemory");
+      }
+      shm=managed_shared_memory(open_or_create, "SharedMemory", 1024);
+      MyMutexContainer* data = shm.find_or_construct<MyMutexContainer>("SharedData")();
+      interprocess_mutex* m = shm.find_or_construct<interprocess_mutex>("ThisMutex")();
+      data->mutex=m;
+      spdlog::info("QuoteBook mutex created. Locking during init.");
+      m->lock();
+      data->mynum++;
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     if (b) {
       spdlog::info("QuoteBook Session started as server");
       if (srcs.empty()) {
@@ -92,13 +131,15 @@ public:
     };
     spdlog::info("QuoteBook session pid is {}", getpid());
     addtoStateMap(message);
+    m->unlock();
+    spdlog::info("Init Mutex unlocked.");
     print();
   }
 
   void QuoteBook_CLIENT() {
     spdlog::info("Attaching to existing Shared memory");
     SessionType = "Client";
-    // managed_shared_memory
+
     spdlog::info("Client mySrcMap being attached. {}", SrcName);
     shmSrc = managed_shared_memory(open_only, SrcName.c_str());
     mySrcMap = shmSrc.find<SharedMemoryMap::ShmemVector>("mySrcMap").first;
@@ -109,13 +150,33 @@ public:
 
     spdlog::info("Client myBook being attached. {}", BookName);
 
-    spdlog::info("Client myBook being attached. {}", BookName);
     myVector = shmSrc.find<SharedMemoryMap::MyVector>("MyVector").first;
 
     myState = shmSrc.find<SharedState>("myState").first;
     NumLevels = myState->rows;
 
     myState->myPidMap = shmSrc.find<SharedMemoryMap::MapType>("myPidMap").first;
+
+      for (int i = 0; i <Srcs.size(); ++i) {
+          //interprocess_mutex mutex;
+          std::string s="SharesDataMutex_"+Srcs.at(i);
+          std::string si="SharedInterger_"+Srcs.at(i);
+
+          spdlog::info("Creating the Shared Mutex for Src  {}.", s , i);
+          interprocess_mutex* m = shmSrc.find<interprocess_mutex>(s.c_str()).first;
+          int *thisint = shmSrc.find<int>(si.c_str()).first;
+          MyMutexContainer mutex_container;
+          mutex_container.mynum=thisint;
+          mutex_container.mutex=m;
+          myMutexes.push_back(mutex_container);
+          myMutexes.at(i).mutex->lock();
+          myMutexes.at(i).mutex->unlock();
+
+          spdlog::info("Finished the Shared Mutex for {}.",Srcs.at(i));
+      }
+      spdlog::info("Checking/Creating the Mutex list.");
+
+      spdlog::info("Finished Checking the Mutex list.");
 
     if (!myState) {
       std::cerr << "Could not find struct or map in shared memory.\n";
@@ -164,7 +225,31 @@ public:
     myState->myPidMap = shmSrc.find_or_construct<SharedMemoryMap::MapType>("myPidMap")(SharedMemoryMap::Allocator(shmSrc.get_segment_manager()));
     // myState->myPidMap=thatmap;
 
-    spdlog::info("Finished Server Setup for Shared Memory.");
+      //MutexAllocator(segment.get_segment_manager());
+      //myMutexVector = shmSrc.construct<SharedMemoryMap::Me>("MutexVector")(SharedMemoryMap::MeAllocator(shmSrc.get_segment_manager()));
+      //myState->mutexes=myMutexVector;
+      for (int i = 0; i <Srcs.size(); ++i) {
+          //interprocess_mutex mutex;
+
+          std::string s="SharesDataMutex_"+Srcs.at(i);
+          std::string si="SharedInterger_"+Srcs.at(i);
+
+      spdlog::info("Creating the Shared Mutex and integer {} {}.", s, i);
+      interprocess_mutex* m = shmSrc.construct<interprocess_mutex>(s.c_str())();
+      int *thisint = shmSrc.construct<int>(si.c_str())(1+(i+1)*(i+1));
+      MyMutexContainer mutex_container;
+      mutex_container.mynum=thisint;
+      mutex_container.mutex=m;
+      myMutexes.push_back(mutex_container);
+
+
+          spdlog::info("Finished the Shared Mutex for {}.",Srcs.at(i));
+      }
+
+
+      spdlog::info("Mystate Mutex list size.");
+
+      spdlog::info("Finished Server Setup for Shared Memory.");
 
   }
 
@@ -174,8 +259,8 @@ public:
   }
 
   ~QuoteBook() {
-    spdlog::info("Goodbye to QuoteBook! with {} {}", typeid(K).name(),
-                 SessionType);
+      spdlog::info("Goodbye to QuoteBook! with {} {}", typeid(K).name(),SessionType);
+      unlockall();
   }
 
   void print() {
@@ -202,7 +287,6 @@ public:
 
     for (int i = 0; i < Srcs.size(); ++i) {
       for (int j = 0; j < NumLevels; ++j) {
-        // spdlog::info(" Elelement ({},{})  is {}", i, j, (*myVector)[cnt]);
 
         std::cout << (*myVector)[cnt] << ", ";
 
@@ -212,7 +296,6 @@ public:
     }
     std::cout << std::endl;
 
-    //}
   }
 
   void runPrintBook() {
@@ -222,6 +305,15 @@ public:
     }
   }
 
+  void unlockall(){
+      for (int i = 0; i <myMutexes.size(); ++i) {
+
+         spdlog::info(" Unlocking mutex for Src...{}  ",Srcs.at(i));
+         myMutexes.at(i).mutex->unlock();
+
+      }
+
+  }
   void BookPrint() {
     spdlog::info(" Starting to print book. ");
     bookPrintThread(&QuoteBook::runPrintBook, this);
@@ -243,8 +335,11 @@ public:
   void BooKAdd(std::string Src, float price, K size) {
     // spdlog::info( " hello {} ", Src);
     int index = getsrcindex(Src);
-
+    //myState->mutexes->at(index)->lock();
+    myMutexes.at(index).mutex->lock();
     myVector->at((NumLevels * index) + (int)price) = size;
+    myMutexes.at(index).mutex->unlock();
+    //myState->mutexes->at(index)->unlock();
   }
 
   void addtoStateMap(std::string message) {

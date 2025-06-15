@@ -1,21 +1,35 @@
-#include "spdlog/spdlog.h"
-#include "src/QuoteBook.h"
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <iostream>
+#include <chrono>
+#include <thread>
+
+
+using namespace boost::interprocess;
+
+struct SharedData {
+    interprocess_mutex mutex;
+    int value;
+};
 
 int main() {
-  std::cout << "Helloo, World!" << std::endl;
+    // Create or open shared memory
+   
+    std::cout << "Starting " << std::endl;
 
-  std::cout << "Hello, World! James" << std::endl;
-  spdlog::info("Welcome to spdlog!");
-  spdlog::error("Some error message with arg: {}", 1);
-  spdlog::warn("Easy padding in numbers like {:08d}", 12);
-  spdlog::critical("Support for int: {0:d}; hex: {0:x}; oct: {0:o}; bin: {0:b}",
-                   42);
-  spdlog::info("Support for floats {:03.2f}", 1.23456);
-  spdlog::info("Positional args are {1} {0}..", "too", "supported");
-  QuoteBook<int, int> myquotebook_int(10);
-  myquotebook_int.print();
-  QuoteBook<float, float> myquotebook_float(10.);
-  myquotebook_float.print();
-  return 0;
+    managed_shared_memory shm(open_or_create, "SharedMemory", 1024);
+
+    // Construct shared data structure
+    SharedData* data = shm.find_or_construct<SharedData>("SharedData")();
+
+    // Lock the mutex before modifying shared data
+    std::cout << "Locking: "  << std::endl;
+    data->mutex.lock();
+    std::cout << "Locked: "  << std::endl;
+    data->value++;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    std::cout << "Updated value: " << data->value << std::endl;
+    data->mutex.unlock();
+
+    return 0;
 }

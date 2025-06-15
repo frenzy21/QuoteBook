@@ -3,28 +3,60 @@ project(QuoteBook)
 
 set(CMAKE_CXX_STANDARD 20)
 
+
+
+# Enable C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Include FetchContent module
+include(FetchContent)
+
+# Download and make GoogleTest available
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/heads/main.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+#This can be made recursive by adding the GLOB_RECURSIVE or something.
+file(GLOB SOURCES CONFIGURE_DEPENDS "UNITTEST/*.cpp")
+
+# Add your test executable
+add_executable(QuoteBook_Tests ${SOURCES})
+
+# Link GoogleTest libraries
+#target_link_libraries(QuoteBook_Tests gtest gtest_main)
+
+# Enable test discovery
+#include(GoogleTest)
+#gtest_discover_tests(QuoteBook_Tests)
+
 include_directories(external/spdlog/include)
+include_directories(".")
 
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -g2")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -O3")
 
 
 add_executable(SERVER server.cpp src/QuoteBook.cpp src/QuoteBook.h)
 
-add_executable(CLIENT client.cpp src/QuoteBook.cpp src/QuoteBook.h
-        src/QuoteBook.h)
+add_executable(CLIENT client.cpp src/QuoteBook.cpp src/QuoteBook.h)
 
 target_link_libraries(SERVER PRIVATE rt pthread)
 target_link_libraries(CLIENT PRIVATE rt pthread)
 
-#target_link_options(SERVER PRIVATE -O3)
-#target_compile_options(SERVER PRIVATE -O3)
-target_compile_options(SERVER PRIVATE -g)
+target_link_options(SERVER PRIVATE -O3)
+target_compile_options(SERVER PRIVATE -O3)
+#target_compile_options(SERVER PRIVATE -g)
 
-#target_link_options(CLIENT PRIVATE -O3)
-#target_compile_options(CLIENT PRIVATE -O3)
-target_compile_options(SERVER PRIVATE -g)
+target_link_options(CLIENT PRIVATE -O3)
+target_compile_options(CLIENT PRIVATE -O3)
+#target_compile_options(SERVER PRIVATE -g)
 
+
+add_library(QuoteBookLib STATIC src/QuoteBook.cpp src/QuoteBook.h)
+target_link_libraries(QuoteBookLib PRIVATE rt pthread)
 
 
 

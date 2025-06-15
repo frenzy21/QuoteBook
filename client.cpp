@@ -25,8 +25,9 @@ int main(int argc, char *argv[]) {
   int random_number = dist(gen);
   myquotebook_CLIENT.BooKAdd("C", dist(gen), 10 * dist(gen));
   myquotebook_CLIENT.print();
-
+  //myquotebook_CLIENT.unlockall();
   simulation(&myquotebook_CLIENT);
+  //  myquotebook_CLIENT.unlockall();
 }
 
 void simulation(QuoteBook<int, int> *myQuoteBook) {
@@ -36,12 +37,14 @@ void simulation(QuoteBook<int, int> *myQuoteBook) {
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  spdlog::info(" Starting Test");
   int random_number = dist(gen);
   // Perform operation
-  for (int i = 0; i < 200000000; ++i) {
+  int n=200000000;
+  for (int i = 0; i < n; ++i) {
+      std::string s = Srcs[distsrcs(gen)];
+                                 spdlog::info(" Starting Test {}" ,s);
     // spdlog::info(" start of loop ");
-    std::string s = Srcs[distsrcs(gen)];
+
     // spdlog::info(" after gen ");
     int p = dist(gen);
     int sz = (int)10 * dist(gen);
@@ -56,4 +59,6 @@ void simulation(QuoteBook<int, int> *myQuoteBook) {
       std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
   spdlog::info("Time taken: {}", duration.count());
+
+  spdlog::info("Average number of updates per second is  {}",1000000*((float)n)/(float) duration.count());
 }

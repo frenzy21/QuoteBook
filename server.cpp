@@ -18,7 +18,7 @@ int main() {
   spdlog::info("Positional args are {1} {0}..", "too", "supported");
 
   QuoteBook<int, int> myquotebook_SERVER("JPY", true, "Server",
-                                         {"AA", "B", "C", "A", "D", "kk"}, 20);
+                                         {"AA", "B", "C", "A", "D", "kk"}, 20,true);
 
   // QuoteBook<int,int> myquotebook_CLIENT("JPY",false,"client");
 
@@ -27,10 +27,12 @@ int main() {
   myquotebook_SERVER.BooKAdd("B", 4, 1900);
   // myquotebook_CLIENT.printbook();
   // myquotebook_SERVER.printbook();
-
+    spdlog::info("Starting Sleep");
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    spdlog::info("Finished Sleep");
   myquotebook_SERVER.runPrintBook();
   // spdlog::info("Position of src {} is {}..", "A",
   // myquotebook_CLIENT.getsrcindex("A"));
-  myquotebook_SERVER.bookPrintThread.join();
+  //myquotebook_SERVER.bookPrintThread.join();
   return 0;
 }
