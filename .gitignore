@@ -2,6 +2,13 @@ CMakeFiles/
 cmake-build-debug/
 SERVER
 CLIENT
+QuoteBook_Tests
 CMakeCache.txt
 cmake_install.cmake
+*.cmake
 Makefile
+logs/
+lib/
+.idea
+_deps
+

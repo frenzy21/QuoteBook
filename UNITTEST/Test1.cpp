@@ -39,7 +39,7 @@ TEST_F(MyTestSuite, TestTwo) {
 }
 
 TEST_F(MyTestSuite, TestThree) {
-    //This test is a little annoying because teh PIDs in the unit tests match. How to solve this? 
+    //This test is a little annoying because teh PIDs in the unit tests match. How to solve this?
   std::map<int, std::string> S_PIDMAP(myenv.myquotebook_SERVER.myState->myPidMap->begin(),myenv.myquotebook_SERVER.myState->myPidMap->end());
   std::map<int, std::string> C_PIDMAP(myenv.myquotebook_CLIENT.myState->myPidMap->begin(),myenv.myquotebook_CLIENT.myState->myPidMap->end());
   //C_PIDMAP.erase(std::prev(C_PIDMAP.end()));
