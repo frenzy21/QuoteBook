@@ -42,8 +42,7 @@ void simulation(QuoteBook<int, int> *myQuoteBook) {
   int n=200000000;
   for (int i = 0; i < n; ++i) {
       std::string s = Srcs[distsrcs(gen)];
-                                 spdlog::info(" Starting Test {}" ,s);
-    // spdlog::info(" start of loop ");
+
 
     // spdlog::info(" after gen ");
     int p = dist(gen);

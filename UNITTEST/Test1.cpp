@@ -1,19 +1,28 @@
-//# include<gtest/gtest.h>
-# include "spdlog/spdlog.h"
-# include<gtest/gtest.h>
-int Factorial(int n);
-
-TEST(SimpleStartUp,MyTest ) {
+#include "src/QuoteBook.h"
+#include "UNITTEST/Env.h"
 
 
-EXPECT_EQ(Factorial(0), 10);
 
 
+
+
+
+TEST_F(MyTestSuite, TestOne) {
+
+    spdlog::critical(" {}",a);
+
+EXPECT_EQ(a, myquotebook_SERVER.NumLevels);
+}
+
+TEST_F(MyTestSuite, TestTwo) {
+EXPECT_GT(2, 0);
 }
 
 
+TEST(SimpleStartUp,MyTest ) {
+ //myquotebook_SERVER.printbook();
 
-int Factorial(int n)
-{
-   return  n+1;
+EXPECT_EQ(10, 10);
+
+
 }
