@@ -277,7 +277,7 @@ public:
     spdlog::info(" myState pidMap contents {}",
                  mapToString(*myState->myPidMap));
 
-    printbook();
+   // printbook();
   }
 
   void printbook() {

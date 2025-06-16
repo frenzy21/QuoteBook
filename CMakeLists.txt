@@ -20,7 +20,7 @@ FetchContent_Declare(
 #FetchContent_MakeAvailable(googletest)
 
 #This can be made recursive by adding the GLOB_RECURSIVE or something.
-file(GLOB SOURCES CONFIGURE_DEPENDS "UNITTEST/*.cpp")
+file(GLOB SOURCES CONFIGURE_DEPENDS "UNITTEST/*")
 
 # Add your test executable
 add_executable(QuoteBook_Tests ${SOURCES})
