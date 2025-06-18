@@ -53,7 +53,7 @@ struct SharedMemoryMap {
 template <typename K, typename V> class QuoteBook {
 public:
   std::string Name = "TEST";
-  std::string BookName = "";
+  std::string LockName = "";
   std::string SrcName = "";
   std::string StateName = "";
 
@@ -101,14 +101,14 @@ public:
     spdlog::info("Welcome to QuoteBook called with argments {} {}", s, b);
     Name = s;
     SrcName = Name + "_Srcs";
-    BookName = Name + "_Book";
+    LockName = Name + "_Book";
     StateName = Name + "_State";
     NumLevels = levels;
       if(clean) {
           spdlog::info("Clearing SharedMemory Region.");
-          shared_memory_object::remove("SharedMemory");
+          removeMemorySpace();
       }
-      shm=managed_shared_memory(open_or_create, "SharedMemory", 1024);
+      shm=managed_shared_memory(open_or_create, LockName.c_str(), 1024);
       MyMutexContainer* data = shm.find_or_construct<MyMutexContainer>("SharedData")();
       interprocess_mutex* m = shm.find_or_construct<interprocess_mutex>("ThisMutex")();
       data->mutex=m;
@@ -148,7 +148,7 @@ public:
       Srcs.emplace_back(s);
     }
 
-    spdlog::info("Client myBook being attached. {}", BookName);
+    spdlog::info("Client myBook being attached");
 
     myVector = shmSrc.find<SharedMemoryMap::MyVector>("MyVector").first;
 
@@ -188,10 +188,9 @@ public:
   void QuoteBook_SERVER() {
     SessionType = "Server";
     spdlog::info("Cleaning Shared memory");
-    shared_memory_object::remove(Name.c_str());
-    spdlog::info("Cleaned up shared memory");
+
     int totsize = 65536 + 10000 + NumLevels * Srcs.size() * sizeof(V);
-    shared_memory_object::remove(SrcName.c_str());
+
 
     shmSrc = managed_shared_memory(create_only, SrcName.c_str(), totsize);
 
@@ -203,11 +202,11 @@ public:
       mySrcMap->emplace_back(s, shmSrc.get_segment_manager());
     }
 
-    spdlog::info("Creating Book Segment {}.", BookName);
+    spdlog::info("Creating Book Segment.");
 
     myVector = shmSrc.construct<SharedMemoryMap::MyVector>("MyVector")( allocator<int, managed_shared_memory::segment_manager>(shmSrc.get_segment_manager())); // first ctor parameter
 
-    spdlog::info("Client myBook being attached and filled. {}", BookName);
+    spdlog::info("Client myBook being attached and filled.");
 
     for (int i = 0; i < NumLevels * Srcs.size(); i++) {
       myVector->push_back(-1 * i * 0);
@@ -223,11 +222,7 @@ public:
     myState->rows = NumLevels;
 
     myState->myPidMap = shmSrc.find_or_construct<SharedMemoryMap::MapType>("myPidMap")(SharedMemoryMap::Allocator(shmSrc.get_segment_manager()));
-    // myState->myPidMap=thatmap;
 
-      //MutexAllocator(segment.get_segment_manager());
-      //myMutexVector = shmSrc.construct<SharedMemoryMap::Me>("MutexVector")(SharedMemoryMap::MeAllocator(shmSrc.get_segment_manager()));
-      //myState->mutexes=myMutexVector;
       for (int i = 0; i <Srcs.size(); ++i) {
           //interprocess_mutex mutex;
 
@@ -278,6 +273,14 @@ public:
                  mapToString(*myState->myPidMap));
 
    // printbook();
+  }
+
+  void removeMemorySpace()
+  {
+  spdlog::info("Cleaning and removing Shared memory {}",SrcName);
+      shared_memory_object::remove(SrcName.c_str());
+      shared_memory_object::remove(LockName.c_str());
+      spdlog::info("Cleaned up shared memory");
   }
 
   void printbook() {
