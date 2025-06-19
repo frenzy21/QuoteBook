@@ -23,8 +23,8 @@ int main() {
   // QuoteBook<int,int> myquotebook_CLIENT("JPY",false,"client");
 
   // myquotebook_SERVER.printbook();
-  myquotebook_SERVER.BooKAdd("AA", 2, 30);
-  myquotebook_SERVER.BooKAdd("B", 4, 1900);
+  myquotebook_SERVER.BooKAddBid("AA", 2, 30);
+  myquotebook_SERVER.BooKAddOffer("B", 4, 1900);
   // myquotebook_CLIENT.printbook();
   // myquotebook_SERVER.printbook();
     spdlog::info("Starting Sleep");

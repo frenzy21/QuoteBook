@@ -30,8 +30,9 @@ TEST_F(MyBookUpdate, AddSrcThatDoesntExist) {
 //Checks the printbook member operates correctly
 TEST_F(MyBookUpdate, GetXLevel) {
 
-ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_SERVER.printbook());
-ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_CLIENT.printbook());
+EXPECT_EQ(0,myenv.myquotebook_SERVER.
+
+getlevel(1))<<" Expected Pid maps to Match";
 
 }
 

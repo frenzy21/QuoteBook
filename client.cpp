@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
   std::uniform_int_distribution<int> dist(0, 4);
   int random_number = dist(gen);
-  myquotebook_CLIENT.BooKAdd("C", dist(gen), 10 * dist(gen));
+  myquotebook_CLIENT.BooKAddOffer("C", dist(gen), 10 * dist(gen));
   myquotebook_CLIENT.print();
   //myquotebook_CLIENT.unlockall();
   simulation(&myquotebook_CLIENT);
@@ -48,7 +48,7 @@ void simulation(QuoteBook<int, int> *myQuoteBook) {
     int p = dist(gen);
     int sz = (int)10 * dist(gen);
     // spdlog::info(" {} {} {}0",s,p,sz);
-    myQuoteBook->BooKAdd(s, p, sz);
+    myQuoteBook->BooKAddBid(s, p, sz);
   }
   // End time
   auto stop = std::chrono::high_resolution_clock::now();

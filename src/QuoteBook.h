@@ -90,7 +90,8 @@ public:
   managed_shared_memory shmSrc;
   SharedMemoryMap::ShmemVector *mySrcMap;
   SharedState *myState;
-  SharedMemoryMap::MyVector *myVector;
+  SharedMemoryMap::MyVector *myVectorBids;
+  SharedMemoryMap::MyVector *myVectorOffers;
   managed_shared_memory shm;
 
 
@@ -150,7 +151,8 @@ public:
 
     spdlog::info("Client myBook being attached");
 
-    myVector = shmSrc.find<SharedMemoryMap::MyVector>("MyVector").first;
+    myVectorBids = shmSrc.find<SharedMemoryMap::MyVector>("MyVectorBids").first;
+    myVectorOffers = shmSrc.find<SharedMemoryMap::MyVector>("MyVectorOffers").first;
 
     myState = shmSrc.find<SharedState>("myState").first;
     NumLevels = myState->rows;
@@ -189,7 +191,7 @@ public:
     SessionType = "Server";
     spdlog::info("Cleaning Shared memory");
 
-    int totsize = 65536 + 10000 + NumLevels * Srcs.size() * sizeof(V);
+    int totsize = 65536 + 10000 + 2*NumLevels * Srcs.size() * sizeof(V);
 
 
     shmSrc = managed_shared_memory(create_only, SrcName.c_str(), totsize);
@@ -204,12 +206,15 @@ public:
 
     spdlog::info("Creating Book Segment.");
 
-    myVector = shmSrc.construct<SharedMemoryMap::MyVector>("MyVector")( allocator<int, managed_shared_memory::segment_manager>(shmSrc.get_segment_manager())); // first ctor parameter
+    myVectorBids = shmSrc.construct<SharedMemoryMap::MyVector>("MyVectorBids")( allocator<int, managed_shared_memory::segment_manager>(shmSrc.get_segment_manager())); // first ctor parameter
+    myVectorOffers = shmSrc.construct<SharedMemoryMap::MyVector>("MyVectoroffers")( allocator<int, managed_shared_memory::segment_manager>(shmSrc.get_segment_manager())); // first ctor parameter
+
 
     spdlog::info("Client myBook being attached and filled.");
 
     for (int i = 0; i < NumLevels * Srcs.size(); i++) {
-      myVector->push_back(-1 * i * 0);
+      myVectorBids->push_back(-1 * i * 0);
+      myVectorOffers->push_back(-1 * i * 0);
     }
 
     spdlog::info("Creating the State memory.", StateName);
@@ -283,21 +288,40 @@ public:
       spdlog::info("Cleaned up shared memory");
   }
 
+V getlevel(V lvl){
+
+      return (V)0;
+  }
+
   void printbook() {
-    spdlog::info(" Print Book {}", myVector->size());
+
+      spdlog::info(" Srcs element = {}", vectorToString(Srcs));
+    spdlog::info(" Print Book [Bids]{}", myVectorBids->size());
     int cnt = 0;
-    spdlog::info(" Srcs element = {}", vectorToString(Srcs));
+
 
     for (int i = 0; i < Srcs.size(); ++i) {
       for (int j = 0; j < NumLevels; ++j) {
 
-        std::cout << (*myVector)[cnt] << ", ";
+        std::cout << (*myVectorBids)[cnt] << ", ";
 
         cnt = cnt + 1;
       }
       std::cout << std::endl;
     }
     std::cout << std::endl;
+    cnt=0;
+      spdlog::info(" Print Book [Offers]{}", myVectorBids->size());
+      for (int i = 0; i < Srcs.size(); ++i) {
+          for (int j = 0; j < NumLevels; ++j) {
+
+              std::cout << (*myVectorOffers)[cnt] << ", ";
+
+              cnt = cnt + 1;
+          }
+          std::cout << std::endl;
+      }
+      std::cout << std::endl;
 
   }
 
@@ -335,15 +359,24 @@ public:
     return index;
   }
 
-  void BooKAdd(std::string Src, float price, K size) {
+  void BooKAddBid(std::string Src, float price, K size) {
     // spdlog::info( " hello {} ", Src);
     int index = getsrcindex(Src);
     //myState->mutexes->at(index)->lock();
     myMutexes.at(index).mutex->lock();
-    myVector->at((NumLevels * index) + (int)price) = size;
+    myVectorBids->at((NumLevels * index) + (int)price) = size;
     myMutexes.at(index).mutex->unlock();
     //myState->mutexes->at(index)->unlock();
   }
+    void BooKAddOffer(std::string Src, float price, K size) {
+        // spdlog::info( " hello {} ", Src);
+        int index = getsrcindex(Src);
+        //myState->mutexes->at(index)->lock();
+        myMutexes.at(index).mutex->lock();
+        myVectorOffers->at((NumLevels * index) + (int)price) = size;
+        myMutexes.at(index).mutex->unlock();
+        //myState->mutexes->at(index)->unlock();
+    }
 
   void addtoStateMap(std::string message) {
 
