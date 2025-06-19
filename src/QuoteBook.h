@@ -292,9 +292,26 @@ public:
         spdlog::info("Cleaned up shared memory");
     }
 
-    V getlevel(V lvl) {
+    V getSizeBids(K price) {
 
-        return (V) 0;
+        V total=(V)0;
+        for(int i=0;i<Srcs.size();i++) {
+            myMutexes.at(i).mutex->lock();
+            total=total+myVectorBids->at((NumLevels * i) + (int) price);
+            myMutexes.at(i).mutex->unlock();
+        }
+        return (V) total;
+    }
+
+    V getSizeOffer(K price) {
+
+        V total=(V)0;
+        for(int i=0;i<Srcs.size();i++) {
+            myMutexes.at(i).mutex->lock();
+            total=total+myVectorOffers->at((NumLevels * i) + (int) price);
+            myMutexes.at(i).mutex->unlock();
+        }
+        return (V) total;
     }
 
     void printbook() {
@@ -334,8 +351,8 @@ public:
         spdlog::info(" Clearing Book");
      //We should really look all and unlock all here.
         for (int i = 0; i < NumLevels * Srcs.size(); i++) {
-            myVectorBids->push_back((V)0);
-            myVectorOffers->push_back((V)0);
+            myVectorBids->at(i)=0;
+            myVectorOffers->at(i)=0;
         }
 
     }
