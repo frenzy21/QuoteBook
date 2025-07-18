@@ -7,31 +7,43 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <atomic>
+
 
 
 
 
 #include <boost/interprocess/allocators/allocator.hpp>
+#include <boost/interprocess/ipc/message_queue.hpp>
 #include <boost/interprocess/containers/map.hpp>
 #include <boost/interprocess/containers/string.hpp>
 #include <boost/interprocess/containers/vector.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 
 
 using namespace boost::interprocess;
 
+//struct SharedData {
+//    interprocess_mutex* mutex;
+//    int value;
+//};
 
 struct MyMutexContainer {
     int* mynum;
+    //std::atomic<bool> bboSeqNum{true};
     interprocess_mutex* mutex;
     // Constructor
 };
 
-struct SharedData {
-    interprocess_mutex* mutex;
-    int value;
+
+struct MessageData{
+    int QuoteSeqNum;
+    int BboSeqNum;
+
 };
 
 struct SharedMemoryMap {
@@ -46,6 +58,9 @@ struct SharedMemoryMap {
     typedef allocator<MyMutexContainer, managed_shared_memory::segment_manager> MeAllocator;
     typedef std::vector<MyMutexContainer,MeAllocator> Me;
 
+   // typedef allocator<MySequenceContainer, managed_shared_memory::segment_manager> MeSeqAllocator;
+   // typedef std::vector<MySequenceContainer,MeSeqAllocator> MeSeq;
+
 };
 
 
@@ -56,6 +71,7 @@ public:
     std::string LockName = "";
     std::string SrcName = "";
     std::string StateName = "";
+    std::string QueueName = "";
 
     std::string SessionType = "None";
 
@@ -64,12 +80,19 @@ public:
     std::vector <std::string> Srcs = std::vector<std::string>();
     std::vector <MyMutexContainer> myMutexes;
     std::thread bookPrintThread;
+    std::thread queuePrintThread;
+    std::atomic<bool> queueStopFlag{false};
+
+
 
     ////////////////////////////////////////////////////////////
 
     struct SharedState {
         int rows;
         int cols;
+        boost::interprocess::interprocess_mutex mutex;
+        int bboSeqNum;
+
         SharedMemoryMap::MapType *myPidMap;
 
     };
@@ -94,24 +117,34 @@ public:
     SharedMemoryMap::MyVector *myVectorOffers;
     managed_shared_memory shm;
 
+    std::unique_ptr<boost::interprocess::message_queue> myMessageQueue;
+
+
 
     QuoteBook(std::string s, bool b, std::string message = "No Message",
               std::vector <std::string> srcs = std::vector<std::string>(),
-              int levels = 5, bool clean = false) {
+              int levels = 5, bool clean = false,int QueueLength=1000)
+              {
         spdlog::info("Welcome to QuoteBook! with {}", typeid(K).name());
         spdlog::info("Welcome to QuoteBook called with argments {} {}", s, b);
         Name = s;
         SrcName = Name + "_Srcs";
         LockName = Name + "_Book";
         StateName = Name + "_State";
+        QueueName = Name + "_Queue";
+
         NumLevels = levels;
         if (clean) {
             spdlog::info("Clearing SharedMemory Region.");
             removeMemorySpace();
+
+
         }
         shm = managed_shared_memory(open_or_create, LockName.c_str(), 1024);
-        MyMutexContainer *data = shm.find_or_construct<MyMutexContainer>("SharedData")();
+        MyMutexContainer *data = shm.find_or_construct<MyMutexContainer>("MyMutexContainer")();
         interprocess_mutex *m = shm.find_or_construct<interprocess_mutex>("ThisMutex")();
+         myMessageQueue = std::make_unique<message_queue>(open_or_create, QueueName.c_str(), 256, sizeof(MessageData));
+
         data->mutex = m;
         spdlog::info("QuoteBook mutex created. Locking during init.");
         m->lock();
@@ -229,6 +262,7 @@ public:
 
         myState->cols = Srcs.size();
         myState->rows = NumLevels;
+        myState->bboSeqNum=0;
 
         myState->myPidMap = shmSrc.find_or_construct<SharedMemoryMap::MapType>("myPidMap")(
                 SharedMemoryMap::Allocator(shmSrc.get_segment_manager()));
@@ -265,7 +299,9 @@ public:
 
     ~QuoteBook() {
         spdlog::info("Goodbye to QuoteBook! with {} {}", typeid(K).name(), SessionType);
+        cleanthreads();
         unlockall();
+        spdlog::info("Goodbye to QuoteBook!. Message Queue thread joined and closed.");
     }
 
     void print() {
@@ -289,6 +325,7 @@ public:
         spdlog::info("Cleaning and removing Shared memory {}", SrcName);
         shared_memory_object::remove(SrcName.c_str());
         shared_memory_object::remove(LockName.c_str());
+        message_queue::remove(QueueName.c_str());
         spdlog::info("Cleaned up shared memory");
     }
 
@@ -364,6 +401,48 @@ public:
     }
   }
 
+  void runPrintBookOnUpdate() {
+        spdlog::info(" Starting to read Message Queue");
+      MessageData mymessage;
+      std::size_t received_size;
+
+      unsigned int priority;
+
+
+      while (!queueStopFlag.load(std::memory_order_relaxed)) {
+          bool received = myMessageQueue->timed_receive(
+                  &mymessage,
+                  sizeof(mymessage),
+                  received_size,
+                  priority,
+                  boost::posix_time::microsec_clock::universal_time() + boost::posix_time::milliseconds(300)
+          );
+         if( !received){
+             spdlog::info(" No data Recieved.");
+         }
+
+          if( received){
+              spdlog::info(" Data Recieved. {} {} {} ",getBboSeqNum(),mymessage.BboSeqNum,mymessage.QuoteSeqNum);
+          }
+         // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      }
+
+
+
+  }
+
+  void sendToMessageQueue(int seq,int myseq)
+  {
+        MessageData m;
+      //spdlog::info(" nding ");
+      int i= addBboSeqNum();
+        m.QuoteSeqNum=i;
+        m.QuoteSeqNum=i;
+
+        myMessageQueue->try_send(&m,sizeof(m),0);
+      //spdlog::info(" Finished Sending");
+
+  }
   void unlockall(){
       for (int i = 0; i <myMutexes.size(); ++i) {
 
@@ -373,10 +452,46 @@ public:
       }
 
   }
+
+  int addBboSeqNum()
+  {
+      scoped_lock<interprocess_mutex> lock(myState->mutex);
+      myState->bboSeqNum++;
+      //spdlog::info(" Incrementing Bbo seqnum {}",myState->bboSeqNum);
+        return myState->bboSeqNum;
+  }
+
+
+  int getBboSeqNum()
+  {
+      scoped_lock<interprocess_mutex> lock(myState->mutex);
+      return myState->bboSeqNum;
+  }
+
+  void cleanthreads(){
+
+        spdlog::info(" Cleaning up threads");
+        queueStopFlag.store(true, std::memory_order_relaxed);
+        try
+        {
+            queuePrintThread.join();
+        }
+        catch(...)
+        {
+            spdlog::info(" Exception caught closing threads. Message Queue may not have been started potentially? ");
+        }
+        spdlog::info(" Cleaned up threads");
+    }
+
   void BookPrint() {
     spdlog::info(" Starting to print book. ");
-    bookPrintThread(&QuoteBook::runPrintBook, this);
+    bookPrintThread=std::thread(&QuoteBook::runPrintBook, this);
   }
+
+  void BookPrintOnUpdate() {
+        spdlog::info(" Starting to print book from Queue. ");
+        queuePrintThread=std::thread(&QuoteBook::runPrintBookOnUpdate, this);
+    }
 
   int getsrcindex(std::string Src) {
     auto it = std::find(Srcs.begin(), Srcs.end(), Src);
@@ -391,7 +506,7 @@ public:
     return index;
   }
 
-  void BooKAddBid(std::string Src, float price, K size) {
+  void BookAddBid(std::string Src, float price, K size) {
     // spdlog::info( " hello {} ", Src);
     int index = getsrcindex(Src);
     //myState->mutexes->at(index)->lock();
@@ -399,8 +514,9 @@ public:
     myVectorBids->at((NumLevels * index) + (int)price) = size;
     myMutexes.at(index).mutex->unlock();
     //myState->mutexes->at(index)->unlock();
+      sendToMessageQueue(index,index);
   }
-    void BooKAddOffer(std::string Src, float price, K size) {
+    void BookAddOffer(std::string Src, float price, K size) {
         // spdlog::info( " hello {} ", Src);
         int index = getsrcindex(Src);
         //myState->mutexes->at(index)->lock();
@@ -408,6 +524,7 @@ public:
         myVectorOffers->at((NumLevels * index) + (int)price) = size;
         myMutexes.at(index).mutex->unlock();
         //myState->mutexes->at(index)->unlock();
+        sendToMessageQueue(index,index);
     }
 
 

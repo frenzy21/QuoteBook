@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 # Enable C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Include FetchContent module
 include(FetchContent)

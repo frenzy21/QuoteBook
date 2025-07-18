@@ -12,16 +12,16 @@
 //Check that MyEnv has the same number of Cols and rows.
 TEST_F(MyBookUpdate, AddPrice) {
     int size=0;
-    myenv.myquotebook_SERVER.BooKAddBid("AA", 2, 30);
-     myenv.myquotebook_SERVER.BooKAddOffer("B", 4, 1900);
+    myenv.myquotebook_SERVER.BookAddBid("AA", 2, 30);
+     myenv.myquotebook_SERVER.BookAddOffer("B", 4, 1900);
 
      size=myenv.myquotebook_CLIENT.getSizeBids(2);
      EXPECT_EQ(30,size)<<"Expected Bid size just added to match.";
 size=myenv.myquotebook_CLIENT.getSizeOffer(4);
 EXPECT_EQ(1900,size)<<"Expected Offer size just added to match.";
 
-myenv.myquotebook_SERVER.BooKAddBid("B", 2, 30);
-myenv.myquotebook_SERVER.BooKAddOffer("AA", 4, 1900);
+myenv.myquotebook_SERVER.BookAddBid("B", 2, 30);
+myenv.myquotebook_SERVER.BookAddOffer("AA", 4, 1900);
 
 size=myenv.myquotebook_CLIENT.getSizeBids(2);
 EXPECT_EQ(2*30,size)<<"Expected Bid size just added to match when including a second source.";
@@ -33,7 +33,6 @@ EXPECT_EQ(2*30,size)<<"Expected Bid size just added to match when including a se
 size=myenv.myquotebook_SERVER.getSizeOffer(4);
 EXPECT_EQ(2*1900,size)<<"Expected Offer size just added to match when including a second source.";
 
-  myenv.myquotebook_SERVER.clearBook();
 
 size=myenv.myquotebook_CLIENT.getSizeBids(2);
 EXPECT_EQ(0,size)<<"Expected Bid size return to zero when clearing.";

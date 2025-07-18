@@ -23,16 +23,18 @@ int main() {
   // QuoteBook<int,int> myquotebook_CLIENT("JPY",false,"client");
 
   // myquotebook_SERVER.printbook();
-  myquotebook_SERVER.BooKAddBid("AA", 2, 30);
-  myquotebook_SERVER.BooKAddOffer("B", 4, 1900);
+  myquotebook_SERVER.BookAddBid("AA", 2, 30);
+  myquotebook_SERVER.BookAddOffer("B", 4, 1900);
   // myquotebook_CLIENT.printbook();
   // myquotebook_SERVER.printbook();
     spdlog::info("Starting Sleep");
-    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     spdlog::info("Finished Sleep");
-  myquotebook_SERVER.runPrintBook();
+  myquotebook_SERVER.BookPrintOnUpdate();
   // spdlog::info("Position of src {} is {}..", "A",
   // myquotebook_CLIENT.getsrcindex("A"));
   //myquotebook_SERVER.bookPrintThread.join();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000*20));
+    spdlog::info("Finished Sleep");
   return 0;
 }

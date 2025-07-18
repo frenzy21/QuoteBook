@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
   std::uniform_int_distribution<int> dist(0, 4);
   int random_number = dist(gen);
-  myquotebook_CLIENT.BooKAddOffer("C", dist(gen), 10 * dist(gen));
+  myquotebook_CLIENT.BookAddOffer("C", dist(gen), 10 * dist(gen));
   myquotebook_CLIENT.print();
   //myquotebook_CLIENT.unlockall();
   simulation(&myquotebook_CLIENT);
@@ -39,7 +39,8 @@ void simulation(QuoteBook<int, int> *myQuoteBook) {
 
   int random_number = dist(gen);
   // Perform operation
-  int n=200000000;
+  int n=20000;
+    spdlog::info(" Starting Simulation.");
   for (int i = 0; i < n; ++i) {
       std::string s = Srcs[distsrcs(gen)];
 
@@ -48,7 +49,7 @@ void simulation(QuoteBook<int, int> *myQuoteBook) {
     int p = dist(gen);
     int sz = (int)10 * dist(gen);
     // spdlog::info(" {} {} {}0",s,p,sz);
-    myQuoteBook->BooKAddBid(s, p, sz);
+    myQuoteBook->BookAddBid(s, p, sz);
   }
   // End time
   auto stop = std::chrono::high_resolution_clock::now();
