@@ -24,9 +24,15 @@ FetchContent_Declare(
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "UNITTEST/*")
 
 # Add your test executable
-add_executable(QuoteBook_Tests ${SOURCES})
+add_executable(QuoteBook_Tests ${SOURCES}
+        UNITTEST/src/MyBookReader.cpp
+        UNITTEST/src/MyBookReader.h)
+
+message(STATUS "SOURCES = ${SOURCES}")
+
 
 # Link GoogleTest libraries
+target_include_directories(QuoteBook_Tests PRIVATE ${CMAKE_SOURCE_DIR}/UNITSTESTS/src/)
 target_link_libraries(QuoteBook_Tests PRIVATE gtest gtest_main $<TARGET_OBJECTS:QuoteBookObject> -lrt -lpthread)
 
 # Enable test discovery

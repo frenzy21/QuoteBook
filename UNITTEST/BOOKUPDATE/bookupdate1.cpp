@@ -2,10 +2,13 @@
 #include "UNITTEST/BOOKUPDATE/Env.h"
 #include <boost/unordered_map.hpp>
 #include <map>
+#include "UNITTEST/src/MyBookReader.h"
 
 
 
 //Basic tests to check that levels in main Bid and Offer vectors update correctly.
+
+
 
 
 
@@ -44,8 +47,8 @@ EXPECT_EQ(0,size)<<"Expected Offer size return to zero when clearing.";
 
 //This test Will Check the sources Match.
 TEST_F(MyBookUpdate, RemovePrice) {
-
-
+    //MyBookReader myreader("www");
+    EXPECT_EQ(0,0)<<"Expected To run";
 }
 
 //Checks teh Pid map Was made correctly

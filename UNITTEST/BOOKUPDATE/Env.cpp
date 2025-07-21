@@ -1,13 +1,14 @@
 #include "spdlog/spdlog.h"
 #include "UNITTEST/BOOKUPDATE/Env.h"
+#include "UNITTEST/src/MyBookReader.h"
 void MyBookUpdate::SetUpTestCase() {
     std::cout << "Setting up test suite\n";
     static int call_count = 0;
     std::cout << "[Suite] SetUpTestSuite call #" << ++call_count << "\n";
-
+    MyBookReader myreader("UNITTEST/DATA/book1.csv");
 
     // Initialize once before any test runs
-    spdlog::critical("Setup Test Suite..................................");
+    spdlog::info("Setup Test Suite..................................");
 }
 
 void MyBookUpdate::TearDownTestCase() {
