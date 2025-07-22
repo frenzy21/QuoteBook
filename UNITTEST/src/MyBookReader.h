@@ -32,7 +32,7 @@ public:
     MyBookReader();
     std::vector<QuoteRecord> read();
     std::vector<QuoteRecord> read(std::string filename);
-
+    std::vector<QuoteRecord> myData;
     // Reads the next row and fills the vector with fields
     bool readRow(std::vector<std::string>& fields);
 
