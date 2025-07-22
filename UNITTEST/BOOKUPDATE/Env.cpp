@@ -5,7 +5,7 @@ void MyBookUpdate::SetUpTestCase() {
     std::cout << "Setting up test suite\n";
     static int call_count = 0;
     std::cout << "[Suite] SetUpTestSuite call #" << ++call_count << "\n";
-    MyBookReader myreader("UNITTEST/DATA/book1.csv");
+    MyBookReader myreader=MyBookReader();
 
     // Initialize once before any test runs
     spdlog::info("Setup Test Suite..................................");

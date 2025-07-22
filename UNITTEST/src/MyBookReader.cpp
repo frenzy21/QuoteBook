@@ -13,7 +13,7 @@
 
 
 
-MyBookReader::MyBookReader(const std::string& filename) : file(filename) {
+MyBookReader::MyBookReader( std::string filename) : file(filename) {
     filename_=filename;
     spdlog::info("Grabbing book data from csv {}." , filename);
     if (!file.is_open()) {
@@ -21,9 +21,21 @@ MyBookReader::MyBookReader(const std::string& filename) : file(filename) {
     }
     MyBookReader::read();
 }
+MyBookReader::MyBookReader( ) {
+    filename_="filename";
+    spdlog::info("Default MyBookReader constructor used.");
 
+}
 
-std::vector<QuoteRecord> MyBookReader::read() {
+std::vector<QuoteRecord> MyBookReader::read(std::string filename) {
+
+    spdlog::info("Grabbing BBo data from csv. Custom read {}.",filename);
+    filename_=filename;
+    file= std::ifstream(filename_);
+
+    return read();
+}
+ std::vector<QuoteRecord> MyBookReader::read() {
     spdlog::info("Grabbing BBo data from csv {}.",filename_);
     QuoteRecord data;
     int id=0;

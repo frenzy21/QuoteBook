@@ -28,19 +28,24 @@ struct QuoteRecord {
 
 class MyBookReader {
 public:
-    explicit MyBookReader(const std::string& filename);
-
+    explicit MyBookReader(std::string filename);
+    MyBookReader();
+    std::vector<QuoteRecord> read();
+    std::vector<QuoteRecord> read(std::string filename);
 
     // Reads the next row and fills the vector with fields
     bool readRow(std::vector<std::string>& fields);
 
-    std::vector<QuoteRecord> read();
 
-    std::vector<QuoteRecord> myData;
+
 
 private:
     std::ifstream file;
     std::string filename_;
+
+
+
+
 };
 
 
