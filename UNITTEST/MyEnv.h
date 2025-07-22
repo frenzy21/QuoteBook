@@ -1,5 +1,7 @@
 #include "src/QuoteBook.h"
 #include "spdlog/spdlog.h"
+#include "MyBookReader.h"
+
 class MyEnv{
 public:
     int a=1;

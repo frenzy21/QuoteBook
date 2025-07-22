@@ -32,7 +32,7 @@ message(STATUS "SOURCES = ${SOURCES}")
 
 
 # Link GoogleTest libraries
-target_include_directories(QuoteBook_Tests PRIVATE ${CMAKE_SOURCE_DIR}/UNITSTESTS/src/)
+target_include_directories(QuoteBook_Tests PRIVATE ${CMAKE_SOURCE_DIR}/UNITTEST/src/)
 target_link_libraries(QuoteBook_Tests PRIVATE gtest gtest_main $<TARGET_OBJECTS:QuoteBookObject> -lrt -lpthread)
 
 # Enable test discovery
