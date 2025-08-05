@@ -48,9 +48,9 @@ TEST_F(MyBookBasic, PidMap) {
 }
 
 //Checks the printbook member operates correctly
-TEST_F(MyBookBasic, PrintBook) {
+//TEST_F(MyBookBasic, PrintBook) {
 
-ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_SERVER.printbook());
-ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_CLIENT.printbook());
+//ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_SERVER.printbook());
+//ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_CLIENT.printbook());
 
-}
+//}

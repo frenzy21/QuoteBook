@@ -17,7 +17,7 @@ int main() {
   spdlog::info("Support for floats {:03.2f}", 1.23456);
   spdlog::info("Positional args are {1} {0}..", "too", "supported");
 
-  QuoteBook<int, int> myquotebook_SERVER("JPY", true, "Server",
+  QuoteBook myquotebook_SERVER("JPY", true, "Server",
                                          {"AA", "B", "C", "A", "D", "kk"}, 20,true);
 
   // QuoteBook<int,int> myquotebook_CLIENT("JPY",false,"client");

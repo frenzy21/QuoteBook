@@ -9,11 +9,11 @@ public:  explicit MyBookUpdate():myreader("UNITTEST/DATA/book1.csv")
 protected:
     static void SetUpTestCase();  // Declaration
     static void TearDownTestCase();
-    void SetUp();  // Declaration
+    void SetUp(); // Declaration
     void TearDown();
 
 public:
-    MyEnv myenv;
+    static MyEnv  myenv;
     MyBookReader myreader;
 };
 

@@ -65,7 +65,7 @@ struct SharedMemoryMap {
 
 
 
-template <typename K, typename V> class QuoteBook {
+class QuoteBook {
 public:
     std::string Name = "TEST";
     std::string LockName = "";
@@ -77,8 +77,8 @@ public:
 
     int NumLevels = 0;
     int myNumLevels = 5;
-    std::vector <std::string> Srcs = std::vector<std::string>();
-    std::vector <MyMutexContainer> myMutexes;
+    std::vector<std::string> Srcs = std::vector<std::string>();
+    std::vector<MyMutexContainer> myMutexes;
     std::thread bookPrintThread;
     std::thread queuePrintThread;
     std::atomic<bool> queueStopFlag{false};
@@ -94,6 +94,7 @@ public:
         int bboSeqNum;
 
         SharedMemoryMap::MapType *myPidMap;
+
 
     };
 
@@ -120,12 +121,10 @@ public:
     std::unique_ptr<boost::interprocess::message_queue> myMessageQueue;
 
 
-
     QuoteBook(std::string s, bool b, std::string message = "No Message",
-              std::vector <std::string> srcs = std::vector<std::string>(),
-              int levels = 5, bool clean = false,int QueueLength=1000)
-              {
-        spdlog::info("Welcome to QuoteBook! with {}", typeid(K).name());
+              std::vector<std::string> srcs = std::vector<std::string>(),
+              int levels = 5, bool clean = false, int QueueLength = 1000) {
+        spdlog::info("Welcome to QuoteBook!");
         spdlog::info("Welcome to QuoteBook called with argments {} {}", s, b);
         Name = s;
         SrcName = Name + "_Srcs";
@@ -143,7 +142,7 @@ public:
         shm = managed_shared_memory(open_or_create, LockName.c_str(), 1024);
         MyMutexContainer *data = shm.find_or_construct<MyMutexContainer>("MyMutexContainer")();
         interprocess_mutex *m = shm.find_or_construct<interprocess_mutex>("ThisMutex")();
-         myMessageQueue = std::make_unique<message_queue>(open_or_create, QueueName.c_str(), 256, sizeof(MessageData));
+        myMessageQueue = std::make_unique<message_queue>(open_or_create, QueueName.c_str(), 256, sizeof(MessageData));
 
         data->mutex = m;
         spdlog::info("QuoteBook mutex created. Locking during init.");
@@ -224,7 +223,7 @@ public:
         SessionType = "Server";
         spdlog::info("Cleaning Shared memory");
 
-        int totsize = 65536 + 10000 + 2 * NumLevels * Srcs.size() * sizeof(V);
+        int totsize = 65536 + 10000 + 2 * NumLevels * Srcs.size() * sizeof(int);
 
 
         shmSrc = managed_shared_memory(create_only, SrcName.c_str(), totsize);
@@ -233,7 +232,7 @@ public:
 
         std::vector<std::string>::iterator it;
         for (it = Srcs.begin(); it != Srcs.end(); ++it) {
-            std::string s = (std::string) * it;
+            std::string s = (std::string) *it;
             mySrcMap->emplace_back(s, shmSrc.get_segment_manager());
         }
 
@@ -262,7 +261,7 @@ public:
 
         myState->cols = Srcs.size();
         myState->rows = NumLevels;
-        myState->bboSeqNum=0;
+        myState->bboSeqNum = 0;
 
         myState->myPidMap = shmSrc.find_or_construct<SharedMemoryMap::MapType>("myPidMap")(
                 SharedMemoryMap::Allocator(shmSrc.get_segment_manager()));
@@ -298,14 +297,14 @@ public:
     }
 
     ~QuoteBook() {
-        spdlog::info("Goodbye to QuoteBook! with {} {}", typeid(K).name(), SessionType);
+        spdlog::info("Goodbye to QuoteBook! with {}", SessionType);
         cleanthreads();
         unlockall();
         spdlog::info("Goodbye to QuoteBook!. Message Queue thread joined and closed.");
     }
 
     void print() {
-        spdlog::info("Welcome to Print! with generic template{}", typeid(K).name());
+        spdlog::info("Welcome to Print!");
         spdlog::info("This session is of type {}", SessionType);
 
         spdlog::info("SrcsMap pointer", (long) mySrcMap);
@@ -329,26 +328,26 @@ public:
         spdlog::info("Cleaned up shared memory");
     }
 
-    V getSizeBids(K price) {
+    int getSizeBids(float price) {
 
-        V total=(V)0;
-        for(int i=0;i<Srcs.size();i++) {
+        int total = (float) 0;
+        for (int i = 0; i < Srcs.size(); i++) {
             myMutexes.at(i).mutex->lock();
-            total=total+myVectorBids->at((NumLevels * i) + (int) price);
+            total = total + myVectorBids->at((NumLevels * i) + (int) price);
             myMutexes.at(i).mutex->unlock();
         }
-        return (V) total;
+        return total;
     }
 
-    V getSizeOffer(K price) {
+    int getSizeOffer(float price) {
 
-        V total=(V)0;
-        for(int i=0;i<Srcs.size();i++) {
+        int total = 0;
+        for (int i = 0; i < Srcs.size(); i++) {
             myMutexes.at(i).mutex->lock();
-            total=total+myVectorOffers->at((NumLevels * i) + (int) price);
+            total = total + myVectorOffers->at((NumLevels * i) + (int) price);
             myMutexes.at(i).mutex->unlock();
         }
-        return (V) total;
+        return total;
     }
 
     void printbook() {
@@ -383,190 +382,197 @@ public:
 
     }
 
-    void clearBook()
-    {
-        spdlog::info(" Clearing Book");
-     //We should really look all and unlock all here.
+    void clearBook() {
+        spdlog::info(" Clearing Book.");
+        //We should really look all and unlock all here.
         for (int i = 0; i < NumLevels * Srcs.size(); i++) {
-            myVectorBids->at(i)=0;
-            myVectorOffers->at(i)=0;
+            myVectorBids->at(i) = 0;
+            myVectorOffers->at(i) = 0;
         }
 
     }
 
-  void runPrintBook() {
-    for (int i = 0; i < 1000; i++) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      printbook();
+    void runPrintBook() {
+        for (int i = 0; i < 1000; i++) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            printbook();
+        }
     }
-  }
 
-  void runPrintBookOnUpdate() {
+    void runPrintBookOnUpdate() {
         spdlog::info(" Starting to read Message Queue");
-      MessageData mymessage;
-      std::size_t received_size;
+        MessageData mymessage;
+        std::size_t received_size;
 
-      unsigned int priority;
-
-
-      while (!queueStopFlag.load(std::memory_order_relaxed)) {
-          bool received = myMessageQueue->timed_receive(
-                  &mymessage,
-                  sizeof(mymessage),
-                  received_size,
-                  priority,
-                  boost::posix_time::microsec_clock::universal_time() + boost::posix_time::milliseconds(300)
-          );
-         if( !received){
-             spdlog::info(" No data Recieved.");
-         }
-
-          if( received){
-              spdlog::info(" Data Recieved. {} {} {} ",getBboSeqNum(),mymessage.BboSeqNum,mymessage.QuoteSeqNum);
-          }
-         // std::this_thread::sleep_for(std::chrono::milliseconds(500));
-      }
+        unsigned int priority;
 
 
+        while (!queueStopFlag.load(std::memory_order_relaxed)) {
+            bool received = myMessageQueue->timed_receive(
+                    &mymessage,
+                    sizeof(mymessage),
+                    received_size,
+                    priority,
+                    boost::posix_time::microsec_clock::universal_time() + boost::posix_time::milliseconds(300)
+            );
+            if (!received) {
+                spdlog::info(" No data Recieved.");
+            }
 
-  }
+            if (received) {
+                spdlog::info(" Data Recieved. {} {} {} ", getBboSeqNum(), mymessage.BboSeqNum, mymessage.QuoteSeqNum);
+            }
+            // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
 
-  void sendToMessageQueue(int seq,int myseq)
-  {
+
+    }
+
+    void sendToMessageQueue(int seq, int myseq) {
         MessageData m;
-      //spdlog::info(" nding ");
-      int i= addBboSeqNum();
-        m.QuoteSeqNum=i;
-        m.QuoteSeqNum=i;
+        //spdlog::info(" nding ");
+        int i = addBboSeqNum();
+        m.QuoteSeqNum = i;
+        m.QuoteSeqNum = i;
 
-        myMessageQueue->try_send(&m,sizeof(m),0);
-      //spdlog::info(" Finished Sending");
+        myMessageQueue->try_send(&m, sizeof(m), 0);
+        //spdlog::info(" Finished Sending");
 
-  }
-  void unlockall(){
-      for (int i = 0; i <myMutexes.size(); ++i) {
+    }
 
-         spdlog::info(" Unlocking mutex for Src...{}  ",Srcs.at(i));
-         myMutexes.at(i).mutex->unlock();
+    void unlockall() {
+        for (int i = 0; i < myMutexes.size(); ++i) {
 
-      }
+            spdlog::info(" Unlocking mutex for Src...{}  ", Srcs.at(i));
+            myMutexes.at(i).mutex->unlock();
 
-  }
+        }
 
-  int addBboSeqNum()
-  {
-      scoped_lock<interprocess_mutex> lock(myState->mutex);
-      myState->bboSeqNum++;
-      //spdlog::info(" Incrementing Bbo seqnum {}",myState->bboSeqNum);
+    }
+
+    int addBboSeqNum() {
+        scoped_lock<interprocess_mutex> lock(myState->mutex);
+        myState->bboSeqNum++;
+        //spdlog::info(" Incrementing Bbo seqnum {}",myState->bboSeqNum);
         return myState->bboSeqNum;
-  }
+    }
 
 
-  int getBboSeqNum()
-  {
-      scoped_lock<interprocess_mutex> lock(myState->mutex);
-      return myState->bboSeqNum;
-  }
+    int getBboSeqNum() {
+        scoped_lock<interprocess_mutex> lock(myState->mutex);
+        return myState->bboSeqNum;
+    }
 
-  void cleanthreads(){
+    void cleanthreads() {
 
         spdlog::info(" Cleaning up threads");
         queueStopFlag.store(true, std::memory_order_relaxed);
-        try
-        {
+        try {
             queuePrintThread.join();
         }
-        catch(...)
-        {
+        catch (...) {
             spdlog::info(" Exception caught closing threads. Message Queue may not have been started potentially? ");
         }
         spdlog::info(" Cleaned up threads");
     }
 
-  void BookPrint() {
-    spdlog::info(" Starting to print book. ");
-    bookPrintThread=std::thread(&QuoteBook::runPrintBook, this);
-  }
+    void BookPrint() {
+        spdlog::info(" Starting to print book. ");
+        bookPrintThread = std::thread(&QuoteBook::runPrintBook, this);
+    }
 
-  void BookPrintOnUpdate() {
+    void BookPrintOnUpdate() {
         spdlog::info(" Starting to print book from Queue. ");
-        queuePrintThread=std::thread(&QuoteBook::runPrintBookOnUpdate, this);
+        queuePrintThread = std::thread(&QuoteBook::runPrintBookOnUpdate, this);
     }
 
-  int getsrcindex(std::string Src) {
-    auto it = std::find(Srcs.begin(), Srcs.end(), Src);
-    int index = -1;
-    if (it != Srcs.end()) {
-      index = std::distance(Srcs.begin(), it);
-      //  std::cout << "Index of " << Src << " is: " << index << std::endl;
-    } else {
-      std::cout << "Element not found!" << std::endl;
+    int getsrcindex(std::string Src) {
+        auto it = std::find(Srcs.begin(), Srcs.end(), Src);
+        int index = -1;
+        if (it != Srcs.end()) {
+            index = std::distance(Srcs.begin(), it);
+            //  std::cout << "Index of " << Src << " is: " << index << std::endl;
+        } else {
+            std::cout << "Element not found!" << std::endl;
+        }
+
+        return index;
     }
 
-    return index;
-  }
+    //We need to do some silly c++ stuff to overlaod these to acocunt for the fact thatthe price iesnt an integer.
 
-  void BookAddBid(std::string Src, float price, K size) {
-    // spdlog::info( " hello {} ", Src);
-    int index = getsrcindex(Src);
-    //myState->mutexes->at(index)->lock();
-    myMutexes.at(index).mutex->lock();
-    myVectorBids->at((NumLevels * index) + (int)price) = size;
-    myMutexes.at(index).mutex->unlock();
-    //myState->mutexes->at(index)->unlock();
-      sendToMessageQueue(index,index);
-  }
-    void BookAddOffer(std::string Src, float price, K size) {
+    void BookAddBid(std::string Src, float price, int size) {
         // spdlog::info( " hello {} ", Src);
         int index = getsrcindex(Src);
         //myState->mutexes->at(index)->lock();
         myMutexes.at(index).mutex->lock();
-        myVectorOffers->at((NumLevels * index) + (int)price) = size;
+        myVectorBids->at((NumLevels * index) + (int) price) = size;
         myMutexes.at(index).mutex->unlock();
         //myState->mutexes->at(index)->unlock();
-        sendToMessageQueue(index,index);
+        sendToMessageQueue(index, index);
     }
 
-
-
-  void addtoStateMap(std::string message) {
-
-
-    myState->myPidMap->insert(std::make_pair(
-        getpid(), SharedMemoryMap::SharedString(message, SharedMemoryMap::CharAllocator(shmSrc.get_segment_manager()))));
-  }
-
-    V GetLevelBid( K lvl)
-    {
-      return 1;
+    void BookAddOffer(std::string Src, float price, int size) {
+        // spdlog::info( " hello {} ", Src);
+        int index = getsrcindex(Src);
+        //myState->mutexes->at(index)->lock();
+        myMutexes.at(index).mutex->lock();
+        myVectorOffers->at((NumLevels * index) + (int) price) = size;
+        myMutexes.at(index).mutex->unlock();
+        //myState->mutexes->at(index)->unlock();
+        sendToMessageQueue(index, index);
     }
+
+    void addtoStateMap(std::string message) {
+
+
+        myState->myPidMap->insert(std::make_pair(
+                getpid(),
+                SharedMemoryMap::SharedString(message, SharedMemoryMap::CharAllocator(shmSrc.get_segment_manager()))));
+    }
+
 
     // Helper function to convert a vector to a string
-  template <typename T> std::string vectorToString(const std::vector<T> &vec) {
-    std::ostringstream oss;
-    oss << "[";
-    for (size_t i = 0; i < vec.size(); ++i) {
-      oss << vec[i];
-      if (i != vec.size() - 1) {
-        oss << ", ";
-      }
+    template<typename T>
+    std::string vectorToString(const std::vector<T> &vec) {
+        std::ostringstream oss;
+        oss << "[";
+        for (size_t i = 0; i < vec.size(); ++i) {
+            oss << vec[i];
+            if (i != vec.size() - 1) {
+                oss << ", ";
+            }
+        }
+        oss << "]";
+        return oss.str();
     }
-    oss << "]";
-    return oss.str();
-  }
 
-  template <typename mapType> std::string mapToString(const mapType &m) {
-    std::ostringstream oss;
-    oss << "{";
-    for (auto it = m.begin(); it != m.end(); ++it) {
-      oss << it->first << ": " << it->second;
-      if (std::next(it) != m.end()) {
-        oss << ", ";
-      }
+    template<typename mapType>
+    std::string mapToString(const mapType &m) {
+        std::ostringstream oss;
+        oss << "{";
+        for (auto it = m.begin(); it != m.end(); ++it) {
+            oss << it->first << ": " << it->second;
+            if (std::next(it) != m.end()) {
+                oss << ", ";
+            }
+        }
+        oss << "}";
+        return oss.str();
     }
-    oss << "}";
-    return oss.str();
-  }
+
+
+    int GetLevelOffer(float lvl) {
+
+        return 1;
+    }
+
+
+    int GetLevelBid(float lvl) {
+
+        return 1;
+    }
+
 };
 
 #endif // BOOK2_QUOTEBOOK_H

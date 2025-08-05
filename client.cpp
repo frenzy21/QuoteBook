@@ -6,7 +6,7 @@
 std::random_device rd;
 std::mt19937 gen(rd()); // Mersenne Twister PRNG
 
-void simulation(QuoteBook<int, int> *myQuoteBook);
+void simulation(QuoteBook *myQuoteBook);
 
 int main(int argc, char *argv[]) {
 
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   }
 
   spdlog::info(" Hello Creating Object");
-  QuoteBook<int, int> myquotebook_CLIENT("JPY", false);
+  QuoteBook myquotebook_CLIENT("JPY", false);
   spdlog::info(" Hello printing book");
   myquotebook_CLIENT.printbook();
 
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
   //  myquotebook_CLIENT.unlockall();
 }
 
-void simulation(QuoteBook<int, int> *myQuoteBook) {
+void simulation(QuoteBook *myQuoteBook) {
   std::vector<std::string> Srcs = myQuoteBook->Srcs;
   std::uniform_int_distribution<int> dist(0, (myQuoteBook->NumLevels) - 1);
   std::uniform_int_distribution<int> distsrcs(0, Srcs.size() - 1);

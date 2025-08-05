@@ -11,13 +11,14 @@
 #include <vector>
 #include <fstream>
 #include <list>
+#include <cstdlib>
 
 struct QuoteRecord {
     std::string sym;
     std::string src;
     std::string side;
     float price;
-    float size;
+    int size;
     int id;
     void print()
     {
@@ -30,11 +31,15 @@ class MyBookReader {
 public:
     explicit MyBookReader(std::string filename);
     MyBookReader();
+    void SetDataPath();
     std::vector<QuoteRecord> read();
+    void print();
     std::vector<QuoteRecord> read(std::string filename);
+    std::vector<QuoteRecord> readpath(std::string filename);
     std::vector<QuoteRecord> myData;
     // Reads the next row and fills the vector with fields
     bool readRow(std::vector<std::string>& fields);
+    std::string DataRoot;
 
 
 
@@ -42,6 +47,7 @@ public:
 private:
     std::ifstream file;
     std::string filename_;
+
 
 
 
