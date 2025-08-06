@@ -15,31 +15,35 @@
 //Check that MyEnv has the same number of Cols and rows.
 TEST_F(MyBookUpdate, AddPrice) {
     int size=0;
-    myenv.myquotebook_SERVER.BookAddBid("AA", 2, 30);
-     myenv.myquotebook_SERVER.BookAddOffer("B", 4, 1900);
+    double sp=myenv.myquotebook_SERVER.startPrice;
+    double mi=myenv.myquotebook_SERVER.myInc;
+    myenv.myquotebook_SERVER.BookAddBid("AA",sp+mi , 30);
+     myenv.myquotebook_SERVER.BookAddOffer("B",sp+2*mi, 1900);
 
-     size=myenv.myquotebook_CLIENT.getSizeBids(2);
+     size=myenv.myquotebook_CLIENT.getSizeBids(sp+mi);
      EXPECT_EQ(30,size)<<"Expected Bid size just added to match.";
-size=myenv.myquotebook_CLIENT.getSizeOffer(4);
+size=myenv.myquotebook_CLIENT.getSizeOffer(sp+2*mi);
 EXPECT_EQ(1900,size)<<"Expected Offer size just added to match.";
 
-myenv.myquotebook_SERVER.BookAddBid("B", 2, 30);
-myenv.myquotebook_SERVER.BookAddOffer("AA", 4, 1900);
+myenv.myquotebook_SERVER.BookAddBid("B", sp+mi, 30);
+myenv.myquotebook_SERVER.BookAddOffer("AA", sp+2*mi, 1900);
 
-size=myenv.myquotebook_CLIENT.getSizeBids(2);
+size=myenv.myquotebook_CLIENT.getSizeBids(sp+mi);
 EXPECT_EQ(2*30,size)<<"Expected Bid size just added to match when including a second source.";
-size=myenv.myquotebook_CLIENT.getSizeOffer(4);
-EXPECT_EQ(2*1900,size)<<"Expected Offer size just added to match when including a second source.";
-
-size=myenv.myquotebook_SERVER.getSizeBids(2);
-EXPECT_EQ(2*30,size)<<"Expected Bid size just added to match when including a second source.";
-size=myenv.myquotebook_SERVER.getSizeOffer(4);
+size=myenv.myquotebook_CLIENT.getSizeOffer(sp+2*mi);
 EXPECT_EQ(2*1900,size)<<"Expected Offer size just added to match when including a second source.";
 
 
-size=myenv.myquotebook_CLIENT.getSizeBids(2);
+size=myenv.myquotebook_CLIENT.getSizeBids(sp);
 EXPECT_EQ(0,size)<<"Expected Bid size return to zero when clearing.";
-size=myenv.myquotebook_CLIENT.getSizeOffer(4);
+size=myenv.myquotebook_CLIENT.getSizeOffer(sp);
+EXPECT_EQ(0,size)<<"Expected Offer size return to zero when clearing.";
+
+myenv.myquotebook_SERVER.clearBook();
+
+size=myenv.myquotebook_CLIENT.getSizeBids(sp+mi);
+EXPECT_EQ(0,size)<<"Expected Bid size return to zero when clearing.";
+size=myenv.myquotebook_CLIENT.getSizeOffer(sp+2*mi);
 EXPECT_EQ(0,size)<<"Expected Offer size return to zero when clearing.";
 
 }

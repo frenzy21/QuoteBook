@@ -16,15 +16,15 @@ int main() {
                    42);
   spdlog::info("Support for floats {:03.2f}", 1.23456);
   spdlog::info("Positional args are {1} {0}..", "too", "supported");
-
+  int queuelength=100;
   QuoteBook myquotebook_SERVER("JPY", true, "Server",
-                                         {"AA", "B", "C", "A", "D", "kk"}, 20,true);
+                                         {"AA", "B", "C", "A", "D", "kk"}, queuelength,true);
 
   // QuoteBook<int,int> myquotebook_CLIENT("JPY",false,"client");
-
+double startprice=myquotebook_SERVER.startPrice;
   // myquotebook_SERVER.printbook();
-  myquotebook_SERVER.BookAddBid("AA", 2, 30);
-  myquotebook_SERVER.BookAddOffer("B", 4, 1900);
+  myquotebook_SERVER.BookAddBid("AA", startprice, 30);
+  myquotebook_SERVER.BookAddOffer("B", startprice, 1900);
   // myquotebook_CLIENT.printbook();
   // myquotebook_SERVER.printbook();
     spdlog::info("Starting Sleep");

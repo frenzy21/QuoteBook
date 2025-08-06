@@ -77,6 +77,8 @@ public:
 
     int NumLevels = 0;
     int myNumLevels = 5;
+    float startPrice=0;
+    float myInc=0;
     std::vector<std::string> Srcs = std::vector<std::string>();
     std::vector<MyMutexContainer> myMutexes;
     std::thread bookPrintThread;
@@ -92,10 +94,14 @@ public:
         int cols;
         boost::interprocess::interprocess_mutex mutex;
         int bboSeqNum;
-
+        double startPrice;
+        double myInc;
         SharedMemoryMap::MapType *myPidMap;
 
-
+        void print()
+        {
+            spdlog::info( " rows = {}; cols= {}; bboSeqNum={}; startprice={}; myinc={}.",rows, cols, bboSeqNum, startPrice, myInc);
+        }
     };
 
 
@@ -123,7 +129,7 @@ public:
 
     QuoteBook(std::string s, bool b, std::string message = "No Message",
               std::vector<std::string> srcs = std::vector<std::string>(),
-              int levels = 5, bool clean = false, int QueueLength = 1000) {
+              int levels = 500, bool clean = false, int QueueLength = 1000,float startprice=1.0,float inc=0.00001) {
         spdlog::info("Welcome to QuoteBook!");
         spdlog::info("Welcome to QuoteBook called with argments {} {}", s, b);
         Name = s;
@@ -133,6 +139,8 @@ public:
         QueueName = Name + "_Queue";
 
         NumLevels = levels;
+        startPrice=startprice;
+        myInc=inc;
         if (clean) {
             spdlog::info("Clearing SharedMemory Region.");
             removeMemorySpace();
@@ -187,10 +195,12 @@ public:
         myVectorOffers = shmSrc.find<SharedMemoryMap::MyVector>("MyVectorOffers").first;
 
         myState = shmSrc.find<SharedState>("myState").first;
+        myState->print();
         NumLevels = myState->rows;
-
+        startPrice=myState->startPrice;
+        myInc=myState->myInc;
         myState->myPidMap = shmSrc.find<SharedMemoryMap::MapType>("myPidMap").first;
-
+        myState->print();
         for (int i = 0; i < Srcs.size(); ++i) {
             //interprocess_mutex mutex;
             std::string s = "SharesDataMutex_" + Srcs.at(i);
@@ -262,10 +272,11 @@ public:
         myState->cols = Srcs.size();
         myState->rows = NumLevels;
         myState->bboSeqNum = 0;
-
+        myState->startPrice=startPrice;
+        myState->myInc=myInc;
         myState->myPidMap = shmSrc.find_or_construct<SharedMemoryMap::MapType>("myPidMap")(
                 SharedMemoryMap::Allocator(shmSrc.get_segment_manager()));
-
+        myState->print();
         for (int i = 0; i < Srcs.size(); ++i) {
             //interprocess_mutex mutex;
 
@@ -328,23 +339,23 @@ public:
         spdlog::info("Cleaned up shared memory");
     }
 
-    int getSizeBids(float price) {
+    int getSizeBids(double price) {
 
         int total = (float) 0;
         for (int i = 0; i < Srcs.size(); i++) {
             myMutexes.at(i).mutex->lock();
-            total = total + myVectorBids->at((NumLevels * i) + (int) price);
+            total = total + myVectorBids->at((NumLevels * i) + getPosition(price));
             myMutexes.at(i).mutex->unlock();
         }
         return total;
     }
 
-    int getSizeOffer(float price) {
+    int getSizeOffer(double price) {
 
         int total = 0;
         for (int i = 0; i < Srcs.size(); i++) {
             myMutexes.at(i).mutex->lock();
-            total = total + myVectorOffers->at((NumLevels * i) + (int) price);
+            total = total + myVectorOffers->at((NumLevels * i) + getPosition( price));
             myMutexes.at(i).mutex->unlock();
         }
         return total;
@@ -501,23 +512,29 @@ public:
 
     //We need to do some silly c++ stuff to overlaod these to acocunt for the fact thatthe price iesnt an integer.
 
-    void BookAddBid(std::string Src, float price, int size) {
+    int getPosition(double price) {
+       // spdlog::info("getPosition  {} {} {} {}",price,startPrice,(price-startPrice),(price-startPrice)/(myInc));
+        return ((int)10*(price-startPrice)/(myInc))/10;
+
+    }
+
+    void BookAddBid(std::string Src, double price, int size) {
         // spdlog::info( " hello {} ", Src);
         int index = getsrcindex(Src);
         //myState->mutexes->at(index)->lock();
         myMutexes.at(index).mutex->lock();
-        myVectorBids->at((NumLevels * index) + (int) price) = size;
+        myVectorBids->at((NumLevels * index) + getPosition( price)) = size;
         myMutexes.at(index).mutex->unlock();
         //myState->mutexes->at(index)->unlock();
         sendToMessageQueue(index, index);
     }
 
-    void BookAddOffer(std::string Src, float price, int size) {
+    void BookAddOffer(std::string Src, double price, int size) {
         // spdlog::info( " hello {} ", Src);
         int index = getsrcindex(Src);
         //myState->mutexes->at(index)->lock();
         myMutexes.at(index).mutex->lock();
-        myVectorOffers->at((NumLevels * index) + (int) price) = size;
+        myVectorOffers->at((NumLevels * index) + getPosition(price)) = size;
         myMutexes.at(index).mutex->unlock();
         //myState->mutexes->at(index)->unlock();
         sendToMessageQueue(index, index);

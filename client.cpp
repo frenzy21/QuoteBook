@@ -20,10 +20,16 @@ int main(int argc, char *argv[]) {
   QuoteBook myquotebook_CLIENT("JPY", false);
   spdlog::info(" Hello printing book");
   myquotebook_CLIENT.printbook();
+  double  startprice=myquotebook_CLIENT.startPrice;
+    double  inc=myquotebook_CLIENT.myInc;
 
-  std::uniform_int_distribution<int> dist(0, 4);
-  int random_number = dist(gen);
-  myquotebook_CLIENT.BookAddOffer("C", dist(gen), 10 * dist(gen));
+  int len=myquotebook_CLIENT.NumLevels;
+  std::uniform_int_distribution<int> dist(0, len);
+  int rn = dist(gen);
+    spdlog::info(" Adding bid {} {} {} {} {} {}",rn,len,startprice,inc,startprice+inc*rn, 10 * rn);
+  myquotebook_CLIENT.BookAddBid("C", startprice+inc*rn, 10 * rn);
+
+    spdlog::info(" Added bid ");
   myquotebook_CLIENT.print();
   //myquotebook_CLIENT.unlockall();
   simulation(&myquotebook_CLIENT);
@@ -34,20 +40,25 @@ void simulation(QuoteBook *myQuoteBook) {
   std::vector<std::string> Srcs = myQuoteBook->Srcs;
   std::uniform_int_distribution<int> dist(0, (myQuoteBook->NumLevels) - 1);
   std::uniform_int_distribution<int> distsrcs(0, Srcs.size() - 1);
+    double  startprice=myQuoteBook->startPrice;
+    double  inc=myQuoteBook->myInc;
 
+    int len=myQuoteBook->NumLevels;
   auto start = std::chrono::high_resolution_clock::now();
 
   int random_number = dist(gen);
   // Perform operation
-  int n=20000;
+  int n=20000000;
     spdlog::info(" Starting Simulation.");
   for (int i = 0; i < n; ++i) {
       std::string s = Srcs[distsrcs(gen)];
 
 
     // spdlog::info(" after gen ");
-    int p = dist(gen);
-    int sz = (int)10 * dist(gen);
+      int rn = dist(gen);
+    double p = startprice+inc*rn;
+    int sz = (int)10 * rn;
+     // spdlog::info(" Adding bid {} {} {} {} {} {}",rn,len,startprice,inc,p, sz);
     // spdlog::info(" {} {} {}0",s,p,sz);
     myQuoteBook->BookAddBid(s, p, sz);
   }

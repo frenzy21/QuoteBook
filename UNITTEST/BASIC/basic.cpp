@@ -48,9 +48,28 @@ TEST_F(MyBookBasic, PidMap) {
 }
 
 //Checks the printbook member operates correctly
-//TEST_F(MyBookBasic, PrintBook) {
+TEST_F(MyBookBasic, PrintBook) {
 
-//ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_SERVER.printbook());
-//ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_CLIENT.printbook());
+ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_SERVER.Srcs);
+ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_CLIENT.Srcs);
 
-//}
+}
+
+TEST_F(MyBookBasic, GetPosition) {
+    double serverinc=myenv.myquotebook_SERVER.myInc;
+    double clientinc=myenv.myquotebook_CLIENT.myInc;
+    double serverstart=myenv.myquotebook_SERVER.startPrice;
+    double clientstart=myenv.myquotebook_CLIENT.startPrice;
+    EXPECT_GT(myenv.myquotebook_SERVER.myInc,0)<<" myInc should be greater than zero";
+    EXPECT_EQ(serverinc,clientinc)<<" incs should match across sessions";
+    EXPECT_EQ(serverstart,clientstart)<<" start prices should match across sessions";
+
+    EXPECT_EQ(0,myenv.myquotebook_CLIENT.getPosition(serverstart));
+
+    EXPECT_EQ(1,myenv.myquotebook_CLIENT.getPosition(serverinc+serverstart));
+
+    EXPECT_EQ(2,myenv.myquotebook_CLIENT.getPosition(2*serverinc+serverstart));
+
+    EXPECT_EQ(20,myenv.myquotebook_SERVER.getPosition(20*serverinc+serverstart));
+
+}
