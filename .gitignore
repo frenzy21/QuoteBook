@@ -2,6 +2,8 @@ CMakeFiles/
 cmake-build-debug/
 SERVER
 CLIENT
+DISPLAY
+*ninja*
 QuoteBook_Tests
 CMakeCache.txt
 cmake_install.cmake
@@ -11,4 +13,5 @@ logs/
 lib/
 .idea
 _deps
+
 
