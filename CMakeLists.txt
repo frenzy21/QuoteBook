@@ -49,9 +49,11 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -O3")
 
 add_executable(SERVER server.cpp)
 add_executable(CLIENT client.cpp)
+add_executable(DISPLAY printbook.cpp)
 
 target_link_libraries(SERVER PRIVATE rt pthread $<TARGET_OBJECTS:QuoteBookObject>)
 target_link_libraries(CLIENT PRIVATE rt pthread $<TARGET_OBJECTS:QuoteBookObject>)
+target_link_libraries(DISPLAY PRIVATE rt pthread $<TARGET_OBJECTS:QuoteBookObject>)
 
 target_link_options(SERVER PRIVATE -O3)
 target_compile_options(SERVER PRIVATE -O3)

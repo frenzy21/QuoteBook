@@ -56,8 +56,9 @@ void simulation(QuoteBook *myQuoteBook) {
 
     // spdlog::info(" after gen ");
       int rn = dist(gen);
+      int rn2 = dist(gen);
     double p = startprice+inc*rn;
-    int sz = (int)10 * rn;
+    int sz = (int)rn2*10 * rn;
      // spdlog::info(" Adding bid {} {} {} {} {} {}",rn,len,startprice,inc,p, sz);
     // spdlog::info(" {} {} {}0",s,p,sz);
     myQuoteBook->BookAddBid(s, p, sz);
