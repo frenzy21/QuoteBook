@@ -5,7 +5,7 @@ void MyBookUpdate::SetUpTestCase() {
     std::cout << "Setting up test suite\n";
     static int call_count = 0;
     MyBookReader myreader=MyBookReader();
-    myenv.myquotebook_SERVER.clearBook();
+    myenv.myquotebook_SERVER->clearBook();
     // Initialize once before any test runs
     spdlog::info("Setup Test Suite..................................");
 }

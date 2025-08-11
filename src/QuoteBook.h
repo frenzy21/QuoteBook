@@ -66,6 +66,8 @@ struct SharedMemoryMap {
 
 
 class QuoteBook {
+private: std::thread bookPrintThread;
+            std::thread queuePrintThread;
 public:
     std::string Name = "TEST";
     std::string LockName = "";
@@ -81,8 +83,7 @@ public:
     float myInc=0;
     std::vector<std::string> Srcs = std::vector<std::string>();
     std::vector<MyMutexContainer> myMutexes;
-    std::thread bookPrintThread;
-    std::thread queuePrintThread;
+
     std::atomic<bool> queueStopFlag{false};
 
 
@@ -96,11 +97,13 @@ public:
         int bboSeqNum;
         double startPrice;
         double myInc;
+        int bidlevel;
+        int offerlevel;
         SharedMemoryMap::MapType *myPidMap;
 
         void print()
         {
-            spdlog::info( " rows = {}; cols= {}; bboSeqNum={}; startprice={}; myinc={}.",rows, cols, bboSeqNum, startPrice, myInc);
+            spdlog::info( " rows = {}; cols= {}; bboSeqNum={}; startprice={}; myinc={} bidlevel={}; offerlevel={}.",rows, cols, bboSeqNum, startPrice, myInc,bidlevel,offerlevel);
         }
     };
 
@@ -171,10 +174,11 @@ public:
             QuoteBook_CLIENT();
         };
         spdlog::info("QuoteBook session pid is {}", getpid());
-        addtoStateMap(message);
+        addToStateMap(message);
         m->unlock();
         spdlog::info("Init Mutex unlocked.");
         print();
+        spdlog::info("Constructor finished.");
     }
 
     void QuoteBook_CLIENT() {
@@ -232,8 +236,8 @@ public:
     void QuoteBook_SERVER() {
         SessionType = "Server";
         spdlog::info("Cleaning Shared memory");
-
-        int totsize = 65536 + 10000 + 2 * NumLevels * Srcs.size() * sizeof(int);
+        //Clealry Im misisng soemthing here as this seg faults if I dont make this larger.
+        int totsize = 65536 + 100000 + 2 * NumLevels * Srcs.size() * sizeof(int);
 
 
         shmSrc = managed_shared_memory(create_only, SrcName.c_str(), totsize);
@@ -256,7 +260,7 @@ public:
                         shmSrc.get_segment_manager())); // first ctor parameter
 
 
-        spdlog::info("Client myBook being attached and filled.");
+        spdlog::info("Server myBook being attached and filled.");
 
         for (int i = 0; i < NumLevels * Srcs.size(); i++) {
             myVectorBids->push_back(-1 * i * 0);
@@ -325,9 +329,10 @@ public:
         spdlog::info(" Srcs element = {}", vectorToString(Srcs));
         spdlog::info(" myState pidMap contents size {}", myState->myPidMap->size());
 
-        spdlog::info(" myState pidMap contents {}",
-                     mapToString(*myState->myPidMap));
+        //spdlog::info(" myState pidMap contents {}",
+         //            mapToString(*myState->myPidMap));
 
+        spdlog::info(" myState pidMap contents finished. ");
         // printbook();
     }
 
@@ -364,7 +369,7 @@ public:
     void printbook() {
 
         spdlog::info(" Srcs element = {}", vectorToString(Srcs));
-        spdlog::info(" Print Book [Bids]{}", myVectorBids->size());
+        spdlog::info(" Print Book [Bids/level] {} {}", myVectorBids->size(),myState->bidlevel);
         int cnt = 0;
 
 
@@ -379,7 +384,7 @@ public:
         }
         std::cout << std::endl;
         cnt = 0;
-        spdlog::info(" Print Book [Offers]{}", myVectorOffers->size());
+        spdlog::info(" Print Book [Offers/level]{} {}", myVectorOffers->size(),myState->offerlevel);
         for (int i = 0; i < Srcs.size(); ++i) {
             for (int j = 0; j < NumLevels; ++j) {
 
@@ -518,14 +523,21 @@ public:
 
     }
 
+    double getPrice(int position) {
+        // spdlog::info("getPosition  {} {} {} {}",price,startPrice,(price-startPrice),(price-startPrice)/(myInc));
+        return startPrice+myInc*position;
+
+    }
+
     void BookAddBid(std::string Src, double price, int size) {
         // spdlog::info( " hello {} ", Src);
         int index = getsrcindex(Src);
         //myState->mutexes->at(index)->lock();
         myMutexes.at(index).mutex->lock();
         myVectorBids->at((NumLevels * index) + getPosition( price)) = size;
+        setBidlevel(Src,price, size);
         myMutexes.at(index).mutex->unlock();
-        //myState->mutexes->at(index)->unlock();
+
         sendToMessageQueue(index, index);
     }
 
@@ -535,12 +547,14 @@ public:
         //myState->mutexes->at(index)->lock();
         myMutexes.at(index).mutex->lock();
         myVectorOffers->at((NumLevels * index) + getPosition(price)) = size;
+
+
+        //setOfferLevel(Src,price, size);
         myMutexes.at(index).mutex->unlock();
-        //myState->mutexes->at(index)->unlock();
         sendToMessageQueue(index, index);
     }
 
-    void addtoStateMap(std::string message) {
+    void addToStateMap(std::string message) {
 
 
         myState->myPidMap->insert(std::make_pair(
@@ -578,14 +592,35 @@ public:
         return oss.str();
     }
 
+    //We simply store the integer that the best bid is at so we can use it later and not search throught he whole vector
+    //The inputs used are just for optimizing later. This function is called after each add on each level.
+    void setBidlevel(std::string Src, double price, int size){
 
-    int GetLevelOffer(float lvl) {
+        return;
+    }
+
+    void setOfferLevel(std::string Src, double price, int size){
+        int tot=0;
+        int i=0,j=0;
+
+        for(i=0;i<NumLevels;i++)
+        {
+            spdlog::info("{} {}",i,i);
+            tot=getLevelOffer(getPrice(i));
+
+
+        }
+        return;
+    }
+
+
+    int getLevelOffer(float lvl) {
 
         return 1;
     }
 
 
-    int GetLevelBid(float lvl) {
+    int getLevelBid(float lvl) {
 
         return 1;
     }

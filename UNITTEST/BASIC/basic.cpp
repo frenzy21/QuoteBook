@@ -12,14 +12,14 @@
 //Check that MyEnv has the same number of Cols and rows.
 TEST_F(MyBookBasic, NumLevelsAndRows) {
 
-int S=myenv.myquotebook_SERVER.NumLevels;
-int C=myenv.myquotebook_CLIENT.NumLevels;
+int S=myenv.myquotebook_SERVER->NumLevels;
+int C=myenv.myquotebook_CLIENT->NumLevels;
 
-int S_ROWS=myenv.myquotebook_SERVER.myState->rows;
-int S_COLS=myenv.myquotebook_CLIENT.myState->cols;
+int S_ROWS=myenv.myquotebook_SERVER->myState->rows;
+int S_COLS=myenv.myquotebook_CLIENT->myState->cols;
 
-int C_ROWS=myenv.myquotebook_SERVER.myState->rows;
-int C_COLS=myenv.myquotebook_CLIENT.myState->cols;
+int C_ROWS=myenv.myquotebook_SERVER->myState->rows;
+int C_COLS=myenv.myquotebook_CLIENT->myState->cols;
 
 EXPECT_EQ(S,C)<< "Expected NumLevels to Match.";
 
@@ -31,8 +31,8 @@ EXPECT_EQ(S_COLS,C_COLS)<< "Expected Cols to Match.";
 
 //This test Will Check the sources Match.
 TEST_F(MyBookBasic, Srcs) {
-    std::vector<std::string> S_SRCS=myenv.myquotebook_SERVER.Srcs;
-    std::vector<std::string> C_SRCS=myenv.myquotebook_CLIENT.Srcs;
+    std::vector<std::string> S_SRCS=myenv.myquotebook_SERVER->Srcs;
+    std::vector<std::string> C_SRCS=myenv.myquotebook_CLIENT->Srcs;
     EXPECT_EQ(S_SRCS.size(),C_SRCS.size())<<" Expected Src Sizes To Match";
     EXPECT_EQ(S_SRCS,C_SRCS)<<" Expected Elements to Match";
 
@@ -41,8 +41,8 @@ TEST_F(MyBookBasic, Srcs) {
 //Checks teh Pid map Was made correctly
 TEST_F(MyBookBasic, PidMap) {
     //This test is a little annoying because teh PIDs in the unit tests match. How to solve this?
-  std::map<int, std::string> S_PIDMAP(myenv.myquotebook_SERVER.myState->myPidMap->begin(),myenv.myquotebook_SERVER.myState->myPidMap->end());
-  std::map<int, std::string> C_PIDMAP(myenv.myquotebook_CLIENT.myState->myPidMap->begin(),myenv.myquotebook_CLIENT.myState->myPidMap->end());
+  std::map<int, std::string> S_PIDMAP(myenv.myquotebook_SERVER->myState->myPidMap->begin(),myenv.myquotebook_SERVER->myState->myPidMap->end());
+  std::map<int, std::string> C_PIDMAP(myenv.myquotebook_CLIENT->myState->myPidMap->begin(),myenv.myquotebook_CLIENT->myState->myPidMap->end());
   //C_PIDMAP.erase(std::prev(C_PIDMAP.end()));
   EXPECT_EQ(S_PIDMAP,C_PIDMAP)<<" Expected Pid maps to Match";
 }
@@ -50,26 +50,46 @@ TEST_F(MyBookBasic, PidMap) {
 //Checks the printbook member operates correctly
 TEST_F(MyBookBasic, PrintBook) {
 
-ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_SERVER.Srcs);
-ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_CLIENT.Srcs);
+ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_SERVER->Srcs);
+ASSERT_NO_FATAL_FAILURE(myenv.myquotebook_CLIENT->Srcs);
 
 }
 
 TEST_F(MyBookBasic, GetPosition) {
-    double serverinc=myenv.myquotebook_SERVER.myInc;
-    double clientinc=myenv.myquotebook_CLIENT.myInc;
-    double serverstart=myenv.myquotebook_SERVER.startPrice;
-    double clientstart=myenv.myquotebook_CLIENT.startPrice;
-    EXPECT_GT(myenv.myquotebook_SERVER.myInc,0)<<" myInc should be greater than zero";
+    double serverinc=myenv.myquotebook_SERVER->myInc;
+    double clientinc=myenv.myquotebook_CLIENT->myInc;
+    double serverstart=myenv.myquotebook_SERVER->startPrice;
+    double clientstart=myenv.myquotebook_CLIENT->startPrice;
+    EXPECT_GT(myenv.myquotebook_SERVER->myInc,0)<<" myInc should be greater than zero";
     EXPECT_EQ(serverinc,clientinc)<<" incs should match across sessions";
     EXPECT_EQ(serverstart,clientstart)<<" start prices should match across sessions";
 
-    EXPECT_EQ(0,myenv.myquotebook_CLIENT.getPosition(serverstart));
+    EXPECT_EQ(0,myenv.myquotebook_CLIENT->getPosition(serverstart));
 
-    EXPECT_EQ(1,myenv.myquotebook_CLIENT.getPosition(serverinc+serverstart));
+    EXPECT_EQ(1,myenv.myquotebook_CLIENT->getPosition(serverinc+serverstart));
 
-    EXPECT_EQ(2,myenv.myquotebook_CLIENT.getPosition(2*serverinc+serverstart));
+    EXPECT_EQ(2,myenv.myquotebook_CLIENT->getPosition(2*serverinc+serverstart));
 
-    EXPECT_EQ(20,myenv.myquotebook_SERVER.getPosition(20*serverinc+serverstart));
+    EXPECT_EQ(20,myenv.myquotebook_SERVER->getPosition(20*serverinc+serverstart));
+    for(int i=0;i<myenv.myquotebook_SERVER->NumLevels;i++) {
+        EXPECT_EQ( i, myenv.myquotebook_CLIENT->getPosition(serverstart + i * serverinc))<<" levels and proces should match";
+    }
 
 }
+
+TEST_F(MyBookBasic, GetPrice) {
+    double serverinc=myenv.myquotebook_SERVER->myInc;
+    double clientinc=myenv.myquotebook_CLIENT->myInc;
+    double serverstart=myenv.myquotebook_SERVER->startPrice;
+    double clientstart=myenv.myquotebook_CLIENT->startPrice;
+    EXPECT_GT(myenv.myquotebook_SERVER->myInc,0)<<" myInc should be greater than zero";
+    EXPECT_EQ(serverinc,clientinc)<<" incs should match across sessions";
+    EXPECT_EQ(serverstart,clientstart)<<" start prices should match across sessions";
+
+    EXPECT_EQ(serverstart,myenv.myquotebook_CLIENT->getPrice(0));
+
+    for(int i=0;i<myenv.myquotebook_SERVER->NumLevels;i++) {
+        EXPECT_NEAR(serverstart + i * serverinc, myenv.myquotebook_CLIENT->getPrice(i),serverinc/100.)<<" levels and proces should match";
+    }
+}
+

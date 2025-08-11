@@ -23,7 +23,10 @@ int main() {
   // QuoteBook<int,int> myquotebook_CLIENT("JPY",false,"client");
 double startprice=myquotebook_SERVER.startPrice;
   // myquotebook_SERVER.printbook();
+    spdlog::info("Adding test rows with startprice. {}",startprice);
+    spdlog::info("Adding bid,");
   myquotebook_SERVER.BookAddBid("AA", startprice, 30);
+    spdlog::info("Adding offer.");
   myquotebook_SERVER.BookAddOffer("B", startprice, 1900);
   // myquotebook_CLIENT.printbook();
   // myquotebook_SERVER.printbook();

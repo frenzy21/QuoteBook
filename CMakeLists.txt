@@ -43,8 +43,8 @@ include_directories(external/spdlog/include)
 include_directories(".")
 
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -O3")
-
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -O3")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ")
 
 
 add_executable(SERVER server.cpp)
@@ -55,12 +55,12 @@ target_link_libraries(SERVER PRIVATE rt pthread $<TARGET_OBJECTS:QuoteBookObject
 target_link_libraries(CLIENT PRIVATE rt pthread $<TARGET_OBJECTS:QuoteBookObject>)
 target_link_libraries(DISPLAY PRIVATE rt pthread $<TARGET_OBJECTS:QuoteBookObject>)
 
-target_link_options(SERVER PRIVATE -O3)
-target_compile_options(SERVER PRIVATE -O3)
+##target_link_options(SERVER PRIVATE -O3)
+##target_compile_options(SERVER PRIVATE -O3)
 #target_compile_options(SERVER PRIVATE -g)
 
-target_link_options(CLIENT PRIVATE -O3)
-target_compile_options(CLIENT PRIVATE -O3)
+##target_link_options(CLIENT PRIVATE -O3)
+##target_compile_options(CLIENT PRIVATE -O3)
 #target_compile_options(SERVER PRIVATE -g)
 
 
