@@ -17,7 +17,7 @@ void MyBookUpdate::TearDownTestCase() {
 }
 
 void MyBookUpdate::SetUp() {
-    std::cout << "Setting\n";
+    std::cout << "Setting here\n";
     static int call_count = 0;
 
 

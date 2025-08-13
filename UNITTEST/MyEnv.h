@@ -15,9 +15,9 @@ public:
        try{
 
            spdlog::info("Creating Env's.");
-            myquotebook_SERVER = new QuoteBook("JPY", true, "Server", {"AA", "B", "C", "A", "D", "kk"}, 2000, true);
+            myquotebook_SERVER = new QuoteBook("EURUSD", true, "Server", {"AA", "B", "C", "A", "D", "kk"}, 2000, true);
            spdlog::info("Created Server Env.");
-            myquotebook_CLIENT = new QuoteBook("JPY", false, "Client");
+            myquotebook_CLIENT = new QuoteBook("EURUSD", false, "Client");
            spdlog::info("Created Client Env.");
         }catch  (const std::exception& e)
         {

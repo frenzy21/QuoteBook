@@ -97,13 +97,13 @@ public:
         int bboSeqNum;
         double startPrice;
         double myInc;
-        int bidlevel;
-        int offerlevel;
+        int bidLevel;
+        int offerLevel;
         SharedMemoryMap::MapType *myPidMap;
 
         void print()
         {
-            spdlog::info( " rows = {}; cols= {}; bboSeqNum={}; startprice={}; myinc={} bidlevel={}; offerlevel={}.",rows, cols, bboSeqNum, startPrice, myInc,bidlevel,offerlevel);
+            spdlog::info( " rows = {}; cols= {}; bboSeqNum={}; startprice={}; myinc={} bidlevel={}; offerlevel={}.",rows, cols, bboSeqNum, startPrice, myInc,bidLevel,offerLevel);
         }
     };
 
@@ -344,13 +344,13 @@ public:
         spdlog::info("Cleaned up shared memory");
     }
 
-    int getSizeBids(double price) {
+    int getSizeBid(double price) {
 
         int total = (float) 0;
         for (int i = 0; i < Srcs.size(); i++) {
-            myMutexes.at(i).mutex->lock();
+           // myMutexes.at(i).mutex->lock();
             total = total + myVectorBids->at((NumLevels * i) + getPosition(price));
-            myMutexes.at(i).mutex->unlock();
+           // myMutexes.at(i).mutex->unlock();
         }
         return total;
     }
@@ -359,9 +359,9 @@ public:
 
         int total = 0;
         for (int i = 0; i < Srcs.size(); i++) {
-            myMutexes.at(i).mutex->lock();
+           // myMutexes.at(i).mutex->lock();
             total = total + myVectorOffers->at((NumLevels * i) + getPosition( price));
-            myMutexes.at(i).mutex->unlock();
+           // myMutexes.at(i).mutex->unlock();
         }
         return total;
     }
@@ -369,7 +369,7 @@ public:
     void printbook() {
 
         spdlog::info(" Srcs element = {}", vectorToString(Srcs));
-        spdlog::info(" Print Book [Bids/level] {} {}", myVectorBids->size(),myState->bidlevel);
+        spdlog::info(" Print Book [Bids/level] {} {}", myVectorBids->size(),myState->bidLevel);
         int cnt = 0;
 
 
@@ -384,7 +384,7 @@ public:
         }
         std::cout << std::endl;
         cnt = 0;
-        spdlog::info(" Print Book [Offers/level]{} {}", myVectorOffers->size(),myState->offerlevel);
+        spdlog::info(" Print Book [Offers/level]{} {}", myVectorOffers->size(),myState->offerLevel);
         for (int i = 0; i < Srcs.size(); ++i) {
             for (int j = 0; j < NumLevels; ++j) {
 
@@ -535,7 +535,7 @@ public:
         //myState->mutexes->at(index)->lock();
         myMutexes.at(index).mutex->lock();
         myVectorBids->at((NumLevels * index) + getPosition( price)) = size;
-        setBidlevel(Src,price, size);
+        setBidLevel(Src,price, size);
         myMutexes.at(index).mutex->unlock();
 
         sendToMessageQueue(index, index);
@@ -544,12 +544,9 @@ public:
     void BookAddOffer(std::string Src, double price, int size) {
         // spdlog::info( " hello {} ", Src);
         int index = getsrcindex(Src);
-        //myState->mutexes->at(index)->lock();
         myMutexes.at(index).mutex->lock();
         myVectorOffers->at((NumLevels * index) + getPosition(price)) = size;
-
-
-        //setOfferLevel(Src,price, size);
+        setOfferLevel(Src,price, size);
         myMutexes.at(index).mutex->unlock();
         sendToMessageQueue(index, index);
     }
@@ -594,35 +591,76 @@ public:
 
     //We simply store the integer that the best bid is at so we can use it later and not search throught he whole vector
     //The inputs used are just for optimizing later. This function is called after each add on each level.
-    void setBidlevel(std::string Src, double price, int size){
+    void setBidLevel(std::string Src, double price, int size){
 
+        int thistot=0;
+        int i=0;
+        spdlog::info("Setting Best Bid level.");
+        for(i=0;i<10;i++)
+        {
+            // spdlog::info(" Best Bid level. {} {}",i,getPrice(i));
+            //getSizeOffer(getPrice(i));
+            // spdlog::info("Setting Best Bid level. {} {} {}",i,getPrice(i),getSizeBid(getPrice(i)));
+            thistot=getSizeBid(getPrice(i));
+            //This line needs updated with that atomic stuff.
+            if (thistot>0){
+                myState->bidLevel=i;
+                   // spdlog::info("Setting the Best Bid level to {} {} {} {}",i,getPrice(i),NumLevels,thistot);
+                return;
+            };
+            thistot=0;
+
+        }
+        myState->bidLevel=0;
         return;
+
+
     }
 
     void setOfferLevel(std::string Src, double price, int size){
-        int tot=0;
-        int i=0,j=0;
-
+        int thistot=0;
+        int i=0;
+        spdlog::info("Setting Best Offer level.");
         for(i=0;i<NumLevels;i++)
         {
-            spdlog::info("{} {}",i,i);
-            tot=getLevelOffer(getPrice(i));
-
+           // spdlog::info(" Best Offer level. {} {}",i,getPrice(i));
+            //getSizeOffer(getPrice(i));
+           // spdlog::info("Setting Best Offer level. {} {} {}",i,getPrice(i),getSizeOffer(getPrice(i)));
+            thistot=getSizeOffer(getPrice(i));
+            //spdlog::info(" Best Offer level. {}",i);
+            //This line needs updated with that atomic stuff.
+            if (thistot>0){
+            myState->offerLevel=i;
+            //    spdlog::info("Setting the Best offer level to {} {} {} {}",i,getPrice(i),NumLevels,thistot);
+            return;
+            };
+            thistot=0;
 
         }
+        myState->offerLevel=NumLevels;
         return;
     }
 
 
-    int getLevelOffer(float lvl) {
+    int getBestOfferLevel() {
 
-        return 1;
+        return myState->offerLevel;
     }
 
 
-    int getLevelBid(float lvl) {
+    int getBestBidLevel() {
 
-        return 1;
+        return myState->bidLevel;
+    }
+    double getBestOffer() {
+
+        return getPrice(getBestOfferLevel()) ;  //myState->offerLevel;
+    }
+
+
+    double getBestBid() {
+
+        return getPrice(getBestBidLevel()); //myState->bidLevel;
     }
 
 };

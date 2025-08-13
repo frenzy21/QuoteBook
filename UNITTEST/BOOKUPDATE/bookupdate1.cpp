@@ -20,7 +20,7 @@ TEST_F(MyBookUpdate, AddPrice) {
     myenv.myquotebook_SERVER->BookAddBid("AA",sp+mi , 30);
      myenv.myquotebook_SERVER->BookAddOffer("B",sp+2*mi, 1900);
 
-     size=myenv.myquotebook_CLIENT->getSizeBids(sp+mi);
+     size=myenv.myquotebook_CLIENT->getSizeBid(sp+mi);
      EXPECT_EQ(30,size)<<"Expected Bid size just added to match.";
 size=myenv.myquotebook_CLIENT->getSizeOffer(sp+2*mi);
 EXPECT_EQ(1900,size)<<"Expected Offer size just added to match.";
@@ -28,20 +28,20 @@ EXPECT_EQ(1900,size)<<"Expected Offer size just added to match.";
 myenv.myquotebook_SERVER->BookAddBid("B", sp+mi, 30);
 myenv.myquotebook_SERVER->BookAddOffer("AA", sp+2*mi, 1900);
 
-size=myenv.myquotebook_CLIENT->getSizeBids(sp+mi);
+size=myenv.myquotebook_CLIENT->getSizeBid(sp+mi);
 EXPECT_EQ(2*30,size)<<"Expected Bid size just added to match when including a second source.";
 size=myenv.myquotebook_CLIENT->getSizeOffer(sp+2*mi);
 EXPECT_EQ(2*1900,size)<<"Expected Offer size just added to match when including a second source.";
 
 
-size=myenv.myquotebook_CLIENT->getSizeBids(sp);
+size=myenv.myquotebook_CLIENT->getSizeBid(sp);
 EXPECT_EQ(0,size)<<"Expected Bid size return to zero when clearing.";
 size=myenv.myquotebook_CLIENT->getSizeOffer(sp);
 EXPECT_EQ(0,size)<<"Expected Offer size return to zero when clearing.";
 
 myenv.myquotebook_SERVER->clearBook();
 
-size=myenv.myquotebook_CLIENT->getSizeBids(sp+mi);
+size=myenv.myquotebook_CLIENT->getSizeBid(sp+mi);
 EXPECT_EQ(0,size)<<"Expected Bid size return to zero when clearing.";
 size=myenv.myquotebook_CLIENT->getSizeOffer(sp+2*mi);
 EXPECT_EQ(0,size)<<"Expected Offer size return to zero when clearing.";

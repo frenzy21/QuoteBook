@@ -54,23 +54,39 @@ add_executable(DISPLAY printbook.cpp)
 target_link_libraries(SERVER PRIVATE rt pthread $<TARGET_OBJECTS:QuoteBookObject>)
 target_link_libraries(CLIENT PRIVATE rt pthread $<TARGET_OBJECTS:QuoteBookObject>)
 target_link_libraries(DISPLAY PRIVATE rt pthread $<TARGET_OBJECTS:QuoteBookObject>)
-
-##target_link_options(SERVER PRIVATE -O3)
-##target_compile_options(SERVER PRIVATE -O3)
-#target_compile_options(SERVER PRIVATE -g)
-
-##target_link_options(CLIENT PRIVATE -O3)
-##target_compile_options(CLIENT PRIVATE -O3)
-#target_compile_options(SERVER PRIVATE -g)
-
-
-
 add_library(QuoteBookObject OBJECT src/QuoteBook.cpp src/QuoteBook.h)
 target_link_libraries(QuoteBookObject PRIVATE rt pthread)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-target_link_options(QuoteBookObject PRIVATE -O3)
-target_compile_options(QuoteBookObject PRIVATE -O3)
+    target_link_options(SERVER PRIVATE -g)
+    target_compile_options(SERVER PRIVATE -g)
+
+    target_link_options(CLIENT PRIVATE -g)
+    target_compile_options(CLIENT PRIVATE -g)
+
+    target_link_options(QuoteBookObject PRIVATE -g)
+    target_compile_options(QuoteBookObject PRIVATE -g)
+
+
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+
+    target_link_options(SERVER PRIVATE -O3)
+    target_compile_options(SERVER PRIVATE -O3)
+
+    target_link_options(CLIENT PRIVATE -O3)
+    target_compile_options(CLIENT PRIVATE -O3)
+
+    target_link_options(QuoteBookObject PRIVATE -O3)
+    target_compile_options(QuoteBookObject PRIVATE -O3)
+
+endif()
+
+
+
+
 
 
 ##c++ /home/balmoral/BOOK2/server.cpp -lrt -lpthread src/QuoteBook.cpp -Ic++ /home/balmoral/BOOK2/server.cpp -lrt -lpthread src/QuoteBook.cpp -Iexternal/spdlog/include -o SERVER -g2 -o SERVER -g2
 
+#~/CMAKE/bin/cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+#cmake --build build
