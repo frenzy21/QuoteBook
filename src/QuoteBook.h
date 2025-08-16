@@ -278,6 +278,9 @@ public:
         myState->bboSeqNum = 0;
         myState->startPrice=startPrice;
         myState->myInc=myInc;
+        myState->bidLevel=0;
+        myState->offerLevel=NumLevels;
+
         myState->myPidMap = shmSrc.find_or_construct<SharedMemoryMap::MapType>("myPidMap")(
                 SharedMemoryMap::Allocator(shmSrc.get_segment_manager()));
         myState->print();
@@ -595,7 +598,7 @@ public:
 
         int thistot=0;
         int i=0;
-        spdlog::info("Setting Best Bid level.");
+        //spdlog::info("Setting Best Bid level.");
         for(i=0;i<10;i++)
         {
             // spdlog::info(" Best Bid level. {} {}",i,getPrice(i));
@@ -620,7 +623,7 @@ public:
     void setOfferLevel(std::string Src, double price, int size){
         int thistot=0;
         int i=0;
-        spdlog::info("Setting Best Offer level.");
+        //spdlog::info("Setting Best Offer level.");
         for(i=0;i<NumLevels;i++)
         {
            // spdlog::info(" Best Offer level. {} {}",i,getPrice(i));
