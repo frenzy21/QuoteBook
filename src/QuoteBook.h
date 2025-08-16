@@ -372,7 +372,7 @@ public:
     void printbook() {
 
         spdlog::info(" Srcs element = {}", vectorToString(Srcs));
-        spdlog::info(" Print Book [Bids/level] {} {}", myVectorBids->size(),myState->bidLevel);
+        spdlog::info(" Print Book [Bids/level] {} {} {}", myVectorBids->size(),myState->bidLevel,myState->myInc);
         int cnt = 0;
 
 
@@ -387,7 +387,7 @@ public:
         }
         std::cout << std::endl;
         cnt = 0;
-        spdlog::info(" Print Book [Offers/level]{} {}", myVectorOffers->size(),myState->offerLevel);
+        spdlog::info(" Print Book [Offers/level]{} {} {}", myVectorOffers->size(),myState->offerLevel,myState->myInc);
         for (int i = 0; i < Srcs.size(); ++i) {
             for (int j = 0; j < NumLevels; ++j) {
 
@@ -599,7 +599,7 @@ public:
         int thistot=0;
         int i=0;
         //spdlog::info("Setting Best Bid level.");
-        for(i=0;i<10;i++)
+        for(i=NumLevels-1;i>=0;i--)
         {
             // spdlog::info(" Best Bid level. {} {}",i,getPrice(i));
             //getSizeOffer(getPrice(i));

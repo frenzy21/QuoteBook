@@ -20,19 +20,19 @@ int main(int argc, char *argv[]) {
   }
 
   spdlog::info(" Hello Creating Object");
-  QuoteBook myquotebook_CLIENT("JPY", false);
+  QuoteBook myquotebook_CLIENT("EURUSD", false);
   spdlog::info(" Hello printing book");
   myquotebook_CLIENT.printbook();
   int i=0;
 
-  while(i<=10)
+  while(i<=1)
   {
       spdlog::info(" ##################################");
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
       myquotebook_CLIENT.printbook();
       spdlog::info(" ##################################");
-
+   i=i+1;
   }
 }
 
